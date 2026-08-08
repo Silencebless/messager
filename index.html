@@ -1,276 +1,301 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Сообщения</title>
-    <link rel="stylesheet" href="./styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Сообщения</title>
+<link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-    <div class="app-container" id="appContainer">
-        <!-- Главный экран: Список чатов -->
-        <div class="view main-view active" id="mainView">
-            <header class="header">
-                <button class="avatar-btn glass-circle" id="settingsBtn" aria-label="Настройки">
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23587a9e'/%3E%3Ccircle cx='20' cy='14' r='6' fill='%23a8c8e8'/%3E%3Cellipse cx='20' cy='34' rx='12' ry='8' fill='%23a8c8e8'/%3E%3C/svg%3E" alt="Аватар" class="avatar-img">
-                </button>
-                <h1 class="header-title">Чаты</h1>
-                <button class="add-btn glass-circle" id="newChatBtn" aria-label="Новый чат">
-                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                        <path d="M11 4V18M4 11H18" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
-                    </svg>
-                </button>
-            </header>
-            <div class="search-container">
-                <div class="search-bar glass-panel">
-                    <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="6.8" cy="6.8" r="4.8" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>
-                        <path d="M10.5 10.5L14.5 14.5" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round"/>
-                    </svg>
-                    <input type="search" class="search-input" placeholder="Поиск" id="searchInput">
-                </div>
-            </div>
-            <div class="chat-list" id="chatList">
-                <!-- Чаты генерируются JS -->
-            </div>
-        </div>
 
-        <!-- Экран настроек -->
-        <div class="view settings-view" id="settingsView">
-            <header class="header">
-                <button class="back-btn glass-circle" id="settingsBackBtn" aria-label="Назад">
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <path d="M12 3L5.5 9L12 15" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-                <h1 class="header-title">Настройки</h1>
-                <div class="header-placeholder"></div>
-            </header>
-            <div class="settings-content">
-                <!-- Блок 1: Профиль -->
-                <div class="settings-block glass-panel" id="profileBlock">
-                    <div class="settings-profile-row">
-                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23587a9e'/%3E%3Ccircle cx='20' cy='14' r='6' fill='%23a8c8e8'/%3E%3Cellipse cx='20' cy='34' rx='12' ry='8' fill='%23a8c8e8'/%3E%3C/svg%3E" alt="Аватар" class="settings-avatar">
-                        <div class="settings-profile-info">
-                            <span class="settings-name">Александр</span>
-                            <span class="settings-tag">@alexander</span>
-                        </div>
-                        <svg class="chevron" width="14" height="14" viewBox="0 0 14 14" fill="none">
-                            <path d="M4.5 2L10 7L4.5 12" stroke="rgba(255,255,255,0.4)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                </div>
-                <!-- Блок 2 -->
-                <div class="settings-block glass-panel">
-                    <div class="settings-row">Конфиденциальность<span class="chevron">›</span></div>
-                    <div class="settings-row">Уведомления<span class="chevron">›</span></div>
-                    <div class="settings-row">Устройства<span class="chevron">›</span></div>
-                    <div class="settings-row last">Данные<span class="chevron">›</span></div>
-                </div>
-                <!-- Блок 3 -->
-                <div class="settings-block glass-panel">
-                    <div class="settings-row">Оформление<span class="chevron">›</span></div>
-                    <div class="settings-row">Группировка чатов<span class="chevron">›</span></div>
-                    <div class="settings-row last">Язык<span class="chevron">›</span></div>
-                </div>
-                <!-- Блок 4 -->
-                <div class="settings-block glass-panel">
-                    <div class="settings-row">Поддержка<span class="chevron">›</span></div>
-                    <div class="settings-row last">О приложении<span class="chevron">›</span></div>
-                </div>
-            </div>
-        </div>
+<div id="app" class="app-shell">
 
-        <!-- Экран профиля -->
-        <div class="view profile-view" id="profileView">
-            <header class="header">
-                <button class="back-btn glass-circle" id="profileBackBtn" aria-label="Назад">
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <path d="M12 3L5.5 9L12 15" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-                <h1 class="header-title">Профиль</h1>
-                <button class="edit-btn glass-circle" id="editProfileBtn" aria-label="Изменить">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M2 11.5V14H4.5L11.9 6.6L9.4 4.1L2 11.5ZM14.3 4.2L11.8 1.7L9.9 3.6L12.4 6.1L14.3 4.2Z" fill="white" fill-opacity="0.8"/>
-                    </svg>
-                </button>
-            </header>
-            <div class="profile-content">
-                <div class="profile-avatar-section">
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23587a9e'/%3E%3Ccircle cx='20' cy='14' r='6' fill='%23a8c8e8'/%3E%3Cellipse cx='20' cy='34' rx='12' ry='8' fill='%23a8c8e8'/%3E%3C/svg%3E" alt="Аватар" class="profile-big-avatar">
-                    <h2 class="profile-name">Александр</h2>
-                </div>
-                <div class="profile-track glass-panel">
-                    <div class="track-cover">🎵</div>
-                    <div class="track-info">
-                        <span class="track-title">Blinding Lights</span>
-                        <span class="track-artist">The Weeknd</span>
-                    </div>
-                </div>
-                <div class="profile-info-card glass-panel">
-                    <div class="info-row"><span class="info-label">Номер</span><span class="info-value">+7 (999) 123-45-67</span></div>
-                    <div class="info-row"><span class="info-label">Тег</span><span class="info-value">@alexander</span></div>
-                    <div class="info-row"><span class="info-label">Дата рождения</span><span class="info-value">15 марта 1995</span></div>
-                    <div class="info-row last"><span class="info-label">Описание</span><span class="info-value">Жизнь — это путешествие 🌍</span></div>
-                </div>
-                <button class="share-btn glass-panel">Поделиться профилем</button>
-            </div>
-        </div>
+  <!-- ======================= SCREEN: CHAT LIST ======================= -->
+  <section id="screen-chats" class="screen root-screen active" data-screen="chats">
+    <header class="nav-bar">
+      <button class="avatar-btn" id="openSettingsBtn" aria-label="Открыть настройки"></button>
+      <h1 class="nav-title">Чаты</h1>
+      <button class="glass-circle-btn accent" id="openNewChatBtn" aria-label="Новый чат">
+        <svg viewBox="0 0 24 24" width="19" height="19"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
+      </button>
+    </header>
 
-        <!-- Экран редактирования профиля -->
-        <div class="view edit-profile-view" id="editProfileView">
-            <header class="header">
-                <button class="back-btn glass-circle" id="editProfileBackBtn" aria-label="Отмена">
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <path d="M12 3L5.5 9L12 15" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-                <h1 class="header-title">Изменить</h1>
-                <button class="done-btn glass-circle" id="editProfileDoneBtn" aria-label="Готово">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M3 8L6.5 12L13 4" stroke="%230A84FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-            </header>
-            <div class="edit-profile-content">
-                <div class="edit-avatar-section">
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23587a9e'/%3E%3Ccircle cx='20' cy='14' r='6' fill='%23a8c8e8'/%3E%3Cellipse cx='20' cy='34' rx='12' ry='8' fill='%23a8c8e8'/%3E%3C/svg%3E" alt="Аватар" class="edit-big-avatar">
-                    <span class="edit-photo-label">Изменить фото</span>
-                </div>
-                <div class="edit-fields">
-                    <input type="text" class="edit-field glass-panel" value="Александр" placeholder="Имя">
-                    <input type="text" class="edit-field glass-panel" value="Жизнь — это путешествие 🌍" placeholder="Описание">
-                    <input type="text" class="edit-field glass-panel" value="15.03.1995" placeholder="Дата рождения">
-                    <input type="text" class="edit-field glass-panel" value="+7 (999) 123-45-67" placeholder="Номер">
-                    <input type="text" class="edit-field glass-panel" value="@alexander" placeholder="Тег">
-                </div>
-            </div>
-        </div>
-
-        <!-- Экран чата -->
-        <div class="view chat-view" id="chatView">
-            <header class="header chat-header">
-                <button class="back-btn glass-circle" id="chatBackBtn" aria-label="Назад">
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <path d="M12 3L5.5 9L12 15" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-                <button class="chat-contact-info" id="chatContactInfo">
-                    <span class="chat-contact-name" id="chatContactName">Мария</span>
-                    <span class="chat-contact-status" id="chatContactStatus">была недавно</span>
-                </button>
-                <button class="avatar-btn glass-circle chat-avatar-btn" id="chatAvatarBtn" aria-label="Аватар контакта">
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%238a6b9e'/%3E%3Ccircle cx='20' cy='14' r='6' fill='%23d4b8e8'/%3E%3Cellipse cx='20' cy='34' rx='12' ry='8' fill='%23d4b8e8'/%3E%3C/svg%3E" alt="Аватар" class="avatar-img">
-                </button>
-            </header>
-            <div class="messages-container" id="messagesContainer">
-                <!-- Сообщения генерируются JS -->
-            </div>
-            <div class="chat-input-area">
-                <button class="attach-btn glass-circle" id="attachBtn" aria-label="Прикрепить">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M10 3V14M6 8L10 3L14 8" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-                <div class="input-wrapper glass-panel">
-                    <input type="text" class="message-input" id="messageInput" placeholder="Сообщение">
-                </div>
-                <button class="send-btn glass-circle" id="sendBtn" aria-label="Отправить">
-                    <svg class="mic-icon" id="micIcon" width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <rect x="6" y="1" width="6" height="10" rx="3" stroke="rgba(255,255,255,0.8)" stroke-width="1.6"/>
-                        <path d="M4 8V9C4 11.8 6.2 14 9 14C11.8 14 14 11.8 14 9V8" stroke="rgba(255,255,255,0.8)" stroke-width="1.6" stroke-linecap="round"/>
-                        <path d="M9 14V17" stroke="rgba(255,255,255,0.8)" stroke-width="1.6" stroke-linecap="round"/>
-                    </svg>
-                    <svg class="camera-icon hidden" id="cameraIcon" width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <rect x="2" y="4" width="14" height="10" rx="2" stroke="rgba(255,255,255,0.8)" stroke-width="1.6"/>
-                        <circle cx="9" cy="9" r="2.5" stroke="rgba(255,255,255,0.8)" stroke-width="1.4"/>
-                        <path d="M6 4L7 2H11L12 4" stroke="rgba(255,255,255,0.8)" stroke-width="1.4" stroke-linecap="round"/>
-                    </svg>
-                    <svg class="send-icon hidden" id="sendIcon" width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <path d="M2 9L16 2L10 16L7.5 10.5L2 9Z" fill="%230A84FF" stroke="%230A84FF" stroke-width="1" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
-
-        <!-- Экран профиля контакта (из чата) -->
-        <div class="view contact-profile-view" id="contactProfileView">
-            <header class="header">
-                <button class="back-btn glass-circle" id="contactProfileBackBtn" aria-label="Назад">
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <path d="M12 3L5.5 9L12 15" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-                <h1 class="header-title">Профиль</h1>
-                <div class="header-placeholder"></div>
-            </header>
-            <div class="contact-profile-content" id="contactProfileContent">
-                <!-- Генерируется JS -->
-            </div>
-        </div>
-
-        <!-- Модальное окно: Новый чат -->
-        <div class="modal-overlay" id="newChatModal">
-            <div class="modal-sheet glass-panel-heavy" id="newChatSheet">
-                <div class="modal-handle"></div>
-                <h2 class="modal-title">Новый чат</h2>
-                <div class="modal-search glass-panel">
-                    <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="6.8" cy="6.8" r="4.8" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>
-                        <path d="M10.5 10.5L14.5 14.5" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round"/>
-                    </svg>
-                    <input type="search" class="search-input" placeholder="Поиск">
-                </div>
-                <div class="modal-actions">
-                    <button class="modal-action-btn glass-panel">
-                        <span class="action-icon">👤+</span>
-                        <span>Добавить контакт</span>
-                    </button>
-                    <button class="modal-action-btn glass-panel">
-                        <span class="action-icon">📢</span>
-                        <span>Создать канал</span>
-                    </button>
-                    <button class="modal-action-btn glass-panel">
-                        <span class="action-icon">👥</span>
-                        <span>Создать группу</span>
-                    </button>
-                </div>
-                <div class="modal-contacts" id="modalContacts">
-                    <!-- Генерируется JS -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Оверлей предпросмотра чата (долгое нажатие) -->
-        <div class="preview-overlay" id="previewOverlay">
-            <div class="preview-window glass-panel-heavy" id="previewWindow">
-                <div class="preview-messages" id="previewMessages">
-                    <!-- Генерируется JS -->
-                </div>
-            </div>
-            <div class="preview-actions" id="previewActions">
-                <button class="preview-action-btn glass-panel">📥 Архивировать</button>
-                <button class="preview-action-btn glass-panel">📌 Закрепить</button>
-            </div>
-        </div>
-
-        <!-- Оверлей предпросмотра аватарки -->
-        <div class="avatar-preview-overlay" id="avatarPreviewOverlay">
-            <div class="avatar-preview-container">
-                <img src="" alt="Аватар" class="avatar-preview-img" id="avatarPreviewImg">
-            </div>
-        </div>
+    <div class="search-wrap">
+      <div class="search-bar">
+        <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input type="text" id="searchInput" placeholder="Поиск" autocomplete="off">
+      </div>
     </div>
 
-    <!-- Оверлей голосового сообщения -->
-    <div class="voice-overlay hidden" id="voiceOverlay">
-        <div class="voice-ring" id="voiceRing">
-            <div class="voice-inner"></div>
-        </div>
-        <span class="voice-hint">Удерживайте для записи</span>
+    <div class="chat-list" id="chatList"></div>
+  </section>
+
+  <!-- ======================= SCREEN: SINGLE CHAT ======================= -->
+  <section id="screen-chat" class="screen" data-screen="chat">
+    <header class="nav-bar chat-header">
+      <button class="text-btn back-btn" data-action="back">
+        <svg viewBox="0 0 24 24" width="12" height="20"><path d="M15 3L6 12l9 9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        <span>Назад</span>
+      </button>
+      <button class="chat-header-center" id="chatHeaderInfo">
+        <span class="chat-name" id="chatHeaderName">Имя</span>
+        <span class="chat-status" id="chatHeaderStatus">в сети</span>
+      </button>
+      <button class="chat-header-avatar" id="chatHeaderAvatar" aria-label="Профиль"></button>
+    </header>
+
+    <div class="messages-scroll" id="messagesList"></div>
+
+    <div class="typing-indicator" id="typingIndicator" hidden>
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
     </div>
 
-    <script src="./script.js"></script>
+    <div class="input-bar">
+      <button class="glass-circle-btn small" id="attachBtn" aria-label="Прикрепить">
+        <svg viewBox="0 0 24 24" width="17" height="17"><path d="M20.5 12.5l-8.4 8.4a4.8 4.8 0 01-6.8-6.8l9-9a3.2 3.2 0 014.6 4.6l-8.9 8.9a1.6 1.6 0 01-2.3-2.3l7.9-7.9" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+
+      <div class="input-field-wrap">
+        <textarea id="messageInput" placeholder="iMessage" rows="1"></textarea>
+        <button class="camera-inline-btn" id="cameraInlineBtn" aria-label="Камера">
+          <svg viewBox="0 0 24 24" width="17" height="17"><path d="M4 8.5A1.5 1.5 0 015.5 7H8l1.1-1.6a1 1 0 01.83-.4h4.14a1 1 0 01.83.4L15.9 7h2.6A1.5 1.5 0 0120 8.5v9A1.5 1.5 0 0118.5 19h-13A1.5 1.5 0 014 17.5v-9z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+        </button>
+      </div>
+
+      <button class="send-btn" id="sendBtn" aria-label="Отправить">
+        <svg class="icon-mic" viewBox="0 0 24 24" width="18" height="18"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M6 11a6 6 0 0012 0M12 19v2" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg>
+        <svg class="icon-camera" viewBox="0 0 24 24" width="18" height="18" hidden><path d="M4 8.5A1.5 1.5 0 015.5 7H8l1.1-1.6a1 1 0 01.83-.4h4.14a1 1 0 01.83.4L15.9 7h2.6A1.5 1.5 0 0120 8.5v9A1.5 1.5 0 0118.5 19h-13A1.5 1.5 0 014 17.5v-9z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+        <svg class="icon-send" viewBox="0 0 24 24" width="17" height="17" hidden><path d="M12 19V5M12 5l-6 6M12 5l6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </button>
+    </div>
+
+    <div class="voice-record-overlay" id="voiceRecordOverlay" hidden>
+      <div class="voice-record-bar">
+        <div class="rec-dot"></div>
+        <span class="rec-time" id="recTime">0:00</span>
+        <div class="rec-wave"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <span class="rec-hint">◀ Проведите для отмены</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= SCREEN: CONTACT PROFILE ======================= -->
+  <section id="screen-contact-profile" class="screen" data-screen="contact-profile">
+    <header class="nav-bar">
+      <button class="text-btn back-btn" data-action="back">
+        <svg viewBox="0 0 24 24" width="12" height="20"><path d="M15 3L6 12l9 9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        <span>Назад</span>
+      </button>
+      <h1 class="nav-title">Профиль</h1>
+      <span class="nav-spacer"></span>
+    </header>
+    <div class="scroll-area profile-scroll" id="contactProfileBody"></div>
+  </section>
+
+  <!-- ======================= SCREEN: SETTINGS ======================= -->
+  <section id="screen-settings" class="screen" data-screen="settings">
+    <header class="nav-bar">
+      <button class="text-btn back-btn" data-action="back">
+        <svg viewBox="0 0 24 24" width="12" height="20"><path d="M15 3L6 12l9 9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        <span>Назад</span>
+      </button>
+      <h1 class="nav-title">Настройки</h1>
+      <span class="nav-spacer"></span>
+    </header>
+    <div class="scroll-area" id="settingsBody">
+      <div class="glass-card settings-profile-card" id="settingsProfileCard" data-action="open-own-profile">
+        <div class="avatar-lg" id="settingsAvatar"></div>
+        <div class="settings-profile-info">
+          <div class="settings-profile-name" id="settingsName">Антон Волков</div>
+          <div class="settings-profile-tag" id="settingsTag">@anton</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" width="10" height="17"><path d="M2 2l8 8-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
+
+      <div class="glass-card settings-list">
+        <button class="settings-row" data-action="open-settings-detail" data-title="Конфиденциальность">
+          <span class="settings-icon" style="background:#8E8E93">🔒</span><span>Конфиденциальность</span><svg class="chevron" viewBox="0 0 24 24" width="9" height="15"><path d="M2 2l8 8-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+        <button class="settings-row" data-action="open-settings-detail" data-title="Уведомления">
+          <span class="settings-icon" style="background:#FF453A">🔔</span><span>Уведомления</span><svg class="chevron" viewBox="0 0 24 24" width="9" height="15"><path d="M2 2l8 8-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+        <button class="settings-row" data-action="open-settings-detail" data-title="Устройства">
+          <span class="settings-icon" style="background:#0A84FF">💻</span><span>Устройства</span><svg class="chevron" viewBox="0 0 24 24" width="9" height="15"><path d="M2 2l8 8-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+        <button class="settings-row" data-action="open-settings-detail" data-title="Данные">
+          <span class="settings-icon" style="background:#30D158">📊</span><span>Данные</span><svg class="chevron" viewBox="0 0 24 24" width="9" height="15"><path d="M2 2l8 8-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+      </div>
+
+      <div class="glass-card settings-list">
+        <button class="settings-row" data-action="open-settings-detail" data-title="Оформление">
+          <span class="settings-icon" style="background:#5E5CE6">🎨</span><span>Оформление</span><svg class="chevron" viewBox="0 0 24 24" width="9" height="15"><path d="M2 2l8 8-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+        <button class="settings-row" data-action="open-settings-detail" data-title="Группировка чатов">
+          <span class="settings-icon" style="background:#FF9F0A">🗂️</span><span>Группировка чатов</span><svg class="chevron" viewBox="0 0 24 24" width="9" height="15"><path d="M2 2l8 8-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+        <button class="settings-row" data-action="open-settings-detail" data-title="Язык">
+          <span class="settings-icon" style="background:#64D2FF">🌐</span><span>Язык</span><svg class="chevron" viewBox="0 0 24 24" width="9" height="15"><path d="M2 2l8 8-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+      </div>
+
+      <div class="glass-card settings-list">
+        <button class="settings-row" data-action="open-settings-detail" data-title="Поддержка">
+          <span class="settings-icon" style="background:#8E8E93">💬</span><span>Поддержка</span><svg class="chevron" viewBox="0 0 24 24" width="9" height="15"><path d="M2 2l8 8-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+        <button class="settings-row" data-action="open-settings-detail" data-title="О приложении">
+          <span class="settings-icon" style="background:#8E8E93">ℹ️</span><span>О приложении</span><svg class="chevron" viewBox="0 0 24 24" width="9" height="15"><path d="M2 2l8 8-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= SCREEN: SETTINGS DETAIL (generic) ======================= -->
+  <section id="screen-settings-detail" class="screen" data-screen="settings-detail">
+    <header class="nav-bar">
+      <button class="text-btn back-btn" data-action="back">
+        <svg viewBox="0 0 24 24" width="12" height="20"><path d="M15 3L6 12l9 9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        <span>Назад</span>
+      </button>
+      <h1 class="nav-title" id="settingsDetailTitle">Раздел</h1>
+      <span class="nav-spacer"></span>
+    </header>
+    <div class="scroll-area" id="settingsDetailBody"></div>
+  </section>
+
+  <!-- ======================= SCREEN: OWN PROFILE ======================= -->
+  <section id="screen-own-profile" class="screen" data-screen="own-profile">
+    <header class="nav-bar">
+      <button class="text-btn back-btn" data-action="back">
+        <svg viewBox="0 0 24 24" width="12" height="20"><path d="M15 3L6 12l9 9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        <span>Назад</span>
+      </button>
+      <h1 class="nav-title">Мой профиль</h1>
+      <button class="text-btn accent-text" data-action="open-edit-profile">Изменить</button>
+    </header>
+    <div class="scroll-area profile-scroll" id="ownProfileBody"></div>
+  </section>
+
+  <!-- ======================= SCREEN: EDIT PROFILE ======================= -->
+  <section id="screen-edit-profile" class="screen" data-screen="edit-profile">
+    <header class="nav-bar">
+      <button class="text-btn back-btn" data-action="back">Отмена</button>
+      <h1 class="nav-title">Изменить профиль</h1>
+      <button class="text-btn accent-text" data-action="save-profile">Готово</button>
+    </header>
+    <div class="scroll-area" id="editProfileBody"></div>
+  </section>
+
+  <!-- ======================= DESKTOP EMPTY STATE ======================= -->
+  <div class="desktop-placeholder" id="desktopPlaceholder">
+    <div class="glyph">💬</div>
+    <p>Выберите чат слева, чтобы начать переписку</p>
+  </div>
+
+  <!-- ======================= NEW CHAT SHEET ======================= -->
+  <div class="sheet-overlay" id="newChatOverlay">
+    <div class="sheet" id="newChatSheet">
+      <div class="sheet-grabber"></div>
+      <header class="nav-bar sheet-header">
+        <button class="text-btn" data-action="close-sheet">Отмена</button>
+        <h1 class="nav-title">Новый чат</h1>
+        <span class="nav-spacer"></span>
+      </header>
+      <div class="search-wrap">
+        <div class="search-bar">
+          <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input type="text" id="newChatSearch" placeholder="Поиск">
+        </div>
+      </div>
+      <div class="new-chat-actions">
+        <button class="action-row" data-action="add-contact">
+          <span class="action-icon" style="background:#30D158">＋</span><span>Добавить контакт</span>
+        </button>
+        <button class="action-row" data-action="create-channel">
+          <span class="action-icon" style="background:#0A84FF">📣</span><span>Создать канал</span>
+        </button>
+        <button class="action-row" data-action="create-group">
+          <span class="action-icon" style="background:#5E5CE6">👥</span><span>Создать группу</span>
+        </button>
+      </div>
+      <div class="scroll-area" id="newChatContactList"></div>
+    </div>
+  </div>
+
+  <!-- ======================= ADD CONTACT SHEET ======================= -->
+  <div class="sheet-overlay" id="addContactOverlay">
+    <div class="sheet small-sheet">
+      <div class="sheet-grabber"></div>
+      <header class="nav-bar sheet-header">
+        <button class="text-btn" data-action="close-inner-sheet">Отмена</button>
+        <h1 class="nav-title">Новый контакт</h1>
+        <button class="text-btn accent-text" data-action="save-contact">Готово</button>
+      </header>
+      <div class="scroll-area">
+        <div class="glass-card form-card">
+          <label class="form-row"><span>Имя</span><input type="text" id="newContactName" placeholder="Введите имя"></label>
+          <label class="form-row"><span>Телефон</span><input type="text" id="newContactPhone" placeholder="+7 ___ ___-__-__"></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================= CREATE GROUP / CHANNEL SHEET ======================= -->
+  <div class="sheet-overlay" id="createGroupOverlay">
+    <div class="sheet" id="createGroupSheet">
+      <div class="sheet-grabber"></div>
+      <header class="nav-bar sheet-header">
+        <button class="text-btn" data-action="close-inner-sheet">Отмена</button>
+        <h1 class="nav-title" id="createGroupTitle">Новая группа</h1>
+        <button class="text-btn accent-text" id="groupNextBtn" data-action="group-next">Далее</button>
+      </header>
+      <div id="groupStepSelect">
+        <div class="search-wrap">
+          <div class="search-bar">
+            <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input type="text" placeholder="Поиск участников">
+          </div>
+        </div>
+        <div class="scroll-area" id="groupContactList"></div>
+      </div>
+      <div id="groupStepDetails" hidden>
+        <div class="group-photo-picker">
+          <div class="avatar-lg avatar-picker" id="groupAvatarPreview">📷</div>
+        </div>
+        <div class="glass-card form-card">
+          <label class="form-row"><span>Название</span><input type="text" id="groupNameInput" placeholder="Введите название"></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================= CHAT PREVIEW (LONG PRESS) ======================= -->
+  <div class="preview-overlay" id="previewOverlay">
+    <div class="preview-wrap">
+      <div class="preview-card" id="previewCard"></div>
+      <div class="preview-actions">
+        <button class="preview-action-btn" data-action="archive-preview">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 7h16M6 7v11a2 2 0 002 2h8a2 2 0 002-2V7M9 11h6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M3 4h18v3H3z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/></svg>
+          <span>Архивировать</span>
+        </button>
+        <button class="preview-action-btn" data-action="pin-preview">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2l1.5 5.5L19 9l-4.5 3.5L16 18l-4-3.2L8 18l1.5-5.5L5 9l5.5-1.5z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/></svg>
+          <span>Закрепить</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================= AVATAR ZOOM OVERLAY ======================= -->
+  <div class="avatar-zoom-overlay" id="avatarZoomOverlay">
+    <div class="avatar-zoom-box" id="avatarZoomBox"></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+</div>
+
+<script src="./script.js"></script>
 </body>
 </html>
