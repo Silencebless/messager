@@ -1,6 +1,5 @@
 /**
- * OLED Messenger — iOS 26 "Liquid Glass" build
- * Полная переработка: анимации, статусы, превью, запись
+ * OLED Messenger — iOS 26 "Liquid Glass" build (production pass)
  */
 
 /* ---------------------------------------------------------------- DATA */
@@ -50,10 +49,8 @@ let messagesData = {
 
 let currentChatId = null;
 let recordMode = 'audio';
-let recentSearches = [];
+let recentSearches = []; // {id, name, avatar, color}
 let isSearchActive = false;
-let stream = null; // для видеозахвата
-let facingMode = 'user'; // для фронтальной камеры
 
 /* ---------------------------------------------------------------- DOM */
 
@@ -62,20 +59,19 @@ const DOM = {
   chatList: document.getElementById('chatList'),
   globalContactList: document.getElementById('globalContactList'),
   messagesArea: document.getElementById('messagesArea'),
+  readStatus: document.getElementById('readStatus'),
   messageInput: document.getElementById('messageInput'),
   sendBtn: document.getElementById('sendBtn'),
   mediaBtn: document.getElementById('mediaBtn'),
   iconMic: document.getElementById('iconMic'),
   iconCam: document.getElementById('iconCam'),
   recordOverlay: document.getElementById('recordOverlay'),
-  recordCameraPreview: document.getElementById('recordCameraPreview'),
-  recordFlipBtn: document.getElementById('recordFlipBtn'),
-  recordTimer: document.getElementById('recordTimer'),
   composerMain: document.getElementById('composerMain'),
+  recordTimer: document.getElementById('recordTimer'),
+  slideCancelText: document.getElementById('slideCancelText'),
   searchInput: document.getElementById('searchInput'),
   searchRow: document.getElementById('searchRow'),
   searchClearBtn: document.getElementById('searchClearBtn'),
-  searchCancelBtn: document.getElementById('searchCancelBtn'),
   searchState: document.getElementById('searchState'),
   recentSearchSection: document.getElementById('recentSearchSection'),
   recentSearchList: document.getElementById('recentSearchList'),
@@ -86,12 +82,15 @@ const DOM = {
   ctxPreview: document.getElementById('ctxPreview'),
   ctxActions: document.getElementById('ctxActions'),
   toast: document.getElementById('toast'),
-  avatarPreviewOverlay: document.getElementById('avatarPreviewOverlay'),
-  avatarPreviewLarge: document.getElementById('avatarPreviewLarge'),
-  headerAvatarDesktop: document.getElementById('headerAvatarDesktop'),
-  headerAvatarMobile: document.getElementById('headerAvatarMobile'),
   settingsContent: document.getElementById('settingsContent'),
-  profileContent: document.getElementById('profileContent')
+  profileContent: document.getElementById('profileContent'),
+  videoRecordOverlay: document.getElementById('videoRecordOverlay'),
+  videoRecordCircle: document.getElementById('videoRecordCircle'),
+  videoPreviewEl: document.getElementById('videoPreviewEl'),
+  videoRecordTimer: document.getElementById('videoRecordTimer'),
+  videoFlipBtn: document.getElementById('videoFlipBtn'),
+  avatarPreviewScrim: document.getElementById('avatarPreviewScrim'),
+  avatarPreview: document.getElementById('avatarPreview')
 };
 
 /* ---------------------------------------------------------------- INIT */
@@ -101,37 +100,38 @@ function init() {
   renderGlobalContacts();
   renderSettings();
   setupEventListeners();
-  setupSwipeGestures();
   setupRecordingGestures();
   setupLongPress();
   setupSidebarScroll();
-  setupAvatarPreviewClose();
 }
 
-/* ---------------------------------------------------------------- ICONS / STATUS TEXT */
+/* ---------------------------------------------------------------- ICONS */
 
 const ICONS = {
   clock: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`,
   pin: `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M16 3a1 1 0 0 1 .8 1.6l-1.6 2.1 2 5.4a1 1 0 0 1-1 1.35H14l-2.3 6.9a.6.6 0 0 1-1.14 0L8.5 13.5H6.2a1 1 0 0 1-.9-1.6l2-4.9L5.7 4.6A1 1 0 0 1 6.5 3z"/></svg>`,
-  muteFilled: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="m23 9-6 6M17 9l6 6"/></svg>`,
+  mute: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="m23 9-6 6M17 9l6 6"/></svg>`,
   reply: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17 4 12l5-5"/><path d="M4 12h10a6 6 0 0 1 6 6v1"/></svg>`,
   copy: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
   forward: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m15 17 5-5-5-5"/><path d="M20 12H10a6 6 0 0 0-6 6v1"/></svg>`,
   trash: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+  bellFill: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a6 6 0 0 0-6 6v3.6c0 .8-.3 1.6-.9 2.1L4 15h16l-1.1-1.3a3 3 0 0 1-.9-2.1V8a6 6 0 0 0-6-6Z"/></svg>`,
+  lockFill: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/></svg>`,
+  data: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>`,
+  palette: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="10.5" r="1.3" fill="currentColor" stroke="none"/></svg>`,
+  globe: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/></svg>`,
+  chatIcon: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  folder: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>`,
+  faceid: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M4 16v2a2 2 0 0 0 2 2h2M20 8V6a2 2 0 0 0-2-2h-2M20 16v2a2 2 0 0 1-2 2h-2"/><path d="M9 10v2M15 10v2M9 16s1.2 1 3 1 3-1 3-1"/></svg>`,
+  help: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.7-2 1.7-2.5 3.3M12 17h.01"/></svg>`,
+  chevron: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`,
+  logout: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>`,
   play: `<svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`,
   phone: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
   video: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="3"/></svg>`,
   search: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7.2"/><path d="m21 21-4.4-4.4"/></svg>`,
-  flip: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.34 6.37a8 8 0 0 1 11.29 0l2.37-2.37v7h-7l2.83-2.83a4 4 0 0 0-5.66 0"/><path d="M14.66 17.63a8 8 0 0 1-11.29 0l-2.37 2.37v-7h7l-2.83 2.83a4 4 0 0 0 5.66 0"/></svg>`
+  muteFilled: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="m23 9-6 6M17 9l6 6"/></svg>`
 };
-
-function statusText(status) {
-  if (status === 'sending') return `<span class="bubble__ticks">${ICONS.clock} Отправка</span>`;
-  if (status === 'sent') return `<span class="bubble__ticks">Доставлено</span>`;
-  if (status === 'delivered') return `<span class="bubble__ticks">Доставлено</span>`;
-  if (status === 'read') return `<span class="bubble__ticks is-read">Прочитано</span>`;
-  return '';
-}
 
 /* ---------------------------------------------------------------- CHAT LIST */
 
@@ -151,7 +151,7 @@ function renderChatList() {
 function buildChatListItem(chat) {
   const isActive = chat.id === currentChatId ? 'is-active' : '';
   const badge = chat.unread > 0 ? `<span class="chat-item__badge">${chat.unread}</span>` : '';
-  const muteIcon = chat.muted ? `<span class="chat-item__muted-icon">${ICONS.muteFilled}</span>` : '';
+  const muteIcon = chat.muted ? `<span class="chat-item__muted-icon">${ICONS.muteFilled.replace('width="18" height="18"', 'width="14" height="14"')}</span>` : '';
   const pinIcon = chat.pinned ? `<span class="chat-item__pin">${ICONS.pin}</span>` : '';
 
   const li = document.createElement('li');
@@ -163,7 +163,7 @@ function buildChatListItem(chat) {
         ${ICONS.trash}
       </button>
     </div>
-    <div class="swipe-front chat-item ${isActive} ${chat.pinned ? 'chat-item--pinned' : ''}" data-chat-id="${chat.id}" data-pinned="${chat.pinned}" onclick="openChat(${chat.id})">
+    <div class="swipe-front chat-item ${isActive} ${chat.pinned ? 'is-pinned' : ''}" data-chat-id="${chat.id}" onclick="openChat(${chat.id})">
       <div class="avatar" style="background: ${chat.color}">
         ${chat.avatar}${chat.online ? '<span class="avatar__status"></span>' : ''}
       </div>
@@ -208,14 +208,12 @@ function escapeHtml(str) {
 /* ---------------------------------------------------------------- CHAT VIEW */
 
 function openChat(chatId, newUser = null) {
-  exitSearch(); // всегда закрываем поиск при открытии чата
   currentChatId = chatId;
   if (newUser && !chats.find(c => c.id === chatId)) {
     chats.unshift({ ...newUser, lastMsg: '', time: '', unread: 0, muted: false, pinned: false });
   }
 
   const chat = chats.find(c => c.id === chatId);
-  if (!chat) return;
   chat.unread = 0;
   renderChatList();
 
@@ -228,14 +226,10 @@ function openChat(chatId, newUser = null) {
   document.getElementById('headerStatus').className = `chat-view__subtitle ${chat.online ? 'online' : ''}`;
 
   const avHTML = `${chat.avatar}${chat.online ? '<span class="avatar__status"></span>' : ''}`;
-  DOM.headerAvatarDesktop.innerHTML = avHTML;
-  DOM.headerAvatarDesktop.style.background = chat.color;
-  DOM.headerAvatarMobile.innerHTML = avHTML;
-  DOM.headerAvatarMobile.style.background = chat.color;
-
-  // Навешиваем клики на аватарки для предпросмотра
-  DOM.headerAvatarDesktop.onclick = (e) => { e.stopPropagation(); showAvatarPreview(chat.avatar, chat.color); };
-  DOM.headerAvatarMobile.onclick = (e) => { e.stopPropagation(); showAvatarPreview(chat.avatar, chat.color); };
+  document.getElementById('headerAvatarDesktop').innerHTML = avHTML;
+  document.getElementById('headerAvatarDesktop').style.background = chat.color;
+  document.getElementById('headerAvatarMobile').innerHTML = avHTML;
+  document.getElementById('headerAvatarMobile').style.background = chat.color;
 
   renderMessages(chatId);
 }
@@ -275,11 +269,12 @@ function togglePinChat(id) {
 function renderMessages(chatId) {
   DOM.messagesArea.innerHTML = '';
   const msgs = messagesData[chatId] || [];
-  msgs.forEach(msg => appendMessage(msg));
+  msgs.forEach(msg => appendMessage(msg, { animate: false }));
+  updateReadStatus(chatId);
   scrollToBottom();
 }
 
-function appendMessage(msg) {
+function appendMessage(msg, opts = {}) {
   const row = document.createElement('div');
   row.className = `bubble-row bubble-row--${msg.type}`;
   row.dataset.msgId = msg.id;
@@ -289,17 +284,20 @@ function appendMessage(msg) {
 
   if (msg.mediaType === 'audio') {
     div.className = `bubble bubble--${msg.type} bubble--voice`;
-    div.innerHTML = `<div class="play-btn">${ICONS.play}</div><div class="waveform"></div><span class="bubble__meta"><span class="bubble__time">${msg.time}</span>${msg.type === 'out' ? statusText(msg.status) : ''}</span>`;
+    div.innerHTML = `<div class="play-btn">${ICONS.play}</div><div class="waveform"></div><span class="bubble__meta"><span class="bubble__time">${msg.time}</span></span>`;
   } else if (msg.mediaType === 'video') {
     div.className = `bubble bubble--${msg.type} bubble--video`;
     div.innerHTML = `<img src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&q=80" alt="video"><span class="bubble__time" style="position:absolute; bottom:12px; right:12px; color:#fff; text-shadow: 0 1px 2px #000;">${msg.time}</span>`;
   } else if (msg.mediaType === 'image') {
     div.className = `bubble bubble--${msg.type} bubble--media`;
-    div.innerHTML = `<img src="${msg.mediaUrl}" alt="photo"><span class="bubble__meta"><span class="bubble__time">${msg.time}</span>${msg.type === 'out' ? statusText(msg.status) : ''}</span>`;
+    div.onclick = () => openAvatarLikePreview(msg.mediaUrl);
+    div.innerHTML = `<img src="${msg.mediaUrl}" alt="photo"><span class="bubble__meta"><span class="bubble__time">${msg.time}</span></span>`;
   } else {
     div.className = `bubble bubble--${msg.type}`;
-    div.innerHTML = `<span class="bubble__text">${escapeHtml(msg.text)}</span><span class="bubble__meta"><span class="bubble__time">${msg.time}</span>${msg.type === 'out' ? statusText(msg.status) : ''}</span>`;
+    div.innerHTML = `<span class="bubble__text">${escapeHtml(msg.text)}</span><span class="bubble__meta"><span class="bubble__time">${msg.time}</span></span>`;
   }
+
+  if (opts.animate === false) div.style.animation = 'none';
 
   row.appendChild(div);
   DOM.messagesArea.appendChild(row);
@@ -315,14 +313,13 @@ function sendMessage(text = '', mediaType = null) {
   messagesData[currentChatId].push(newMsg);
 
   const chat = chats.find(c => c.id === currentChatId);
-  if (chat) {
-    chat.lastMsg = mediaType === 'audio' ? '🎤 Голосовое сообщение' : mediaType === 'video' ? '🎥 Видеосообщение' : mediaType === 'image' ? '📷 Фото' : text;
-    chat.time = timeStr;
-  }
+  chat.lastMsg = mediaType === 'audio' ? '🎤 Голосовое сообщение' : mediaType === 'video' ? '🎥 Видеосообщение' : mediaType === 'image' ? '📷 Фото' : text;
+  chat.time = timeStr;
 
   renderChatList();
   appendMessage(newMsg);
   scrollToBottom();
+  updateReadStatus(currentChatId);
 
   DOM.messageInput.value = '';
   DOM.messageInput.style.height = 'auto';
@@ -337,17 +334,24 @@ function simulateMessageStatus(chatId, msgId) {
     const msg = (messagesData[chatId] || []).find(m => m.id === msgId);
     if (!msg) return;
     msg.status = status;
-    if (currentChatId === chatId) {
-      const bubbleEl = DOM.messagesArea.querySelector(`.bubble[data-msg-id="${msgId}"] .bubble__meta`);
-      if (bubbleEl) {
-        const timeEl = bubbleEl.querySelector('.bubble__time');
-        bubbleEl.innerHTML = `<span class="bubble__time">${timeEl ? timeEl.textContent : msg.time}</span>${statusText(status)}`;
-      }
-    }
+    if (currentChatId === chatId) updateReadStatus(chatId);
   };
-  setTimeout(() => updateStatus('sent'), 450);
-  setTimeout(() => updateStatus('delivered'), 1200);
+  setTimeout(() => updateStatus('delivered'), 900);
   setTimeout(() => updateStatus('read'), 2600 + Math.random() * 1500);
+}
+
+/* iMessage-style status: a small line of text under the very last outgoing bubble,
+   not ticks on every bubble. */
+function updateReadStatus(chatId) {
+  const msgs = messagesData[chatId] || [];
+  const lastOut = [...msgs].reverse().find(m => m.type === 'out');
+  if (!lastOut || !lastOut.status || lastOut.status === 'sending') {
+    DOM.readStatus.classList.remove('is-visible');
+    return;
+  }
+  const label = lastOut.status === 'read' ? 'Прочитано' : 'Доставлено';
+  DOM.readStatus.textContent = label;
+  DOM.readStatus.classList.add('is-visible');
 }
 
 /* ---------------------------------------------------------------- SEARCH */
@@ -356,26 +360,23 @@ function enterSearch() {
   if (isSearchActive) return;
   isSearchActive = true;
   DOM.searchRow.classList.add('is-active');
-  DOM.chatList.classList.add('is-hidden');
+  document.getElementById('chatList').classList.add('is-hidden');
   DOM.searchState.classList.remove('is-hidden');
-  DOM.sidebarNav.classList.add('search-mode'); // для центрирования заголовка если нужно
   renderRecentSearches();
 }
 
 function exitSearch() {
-  if (!isSearchActive) return;
   isSearchActive = false;
   DOM.searchInput.value = '';
   DOM.searchInput.classList.add('is-empty');
   DOM.searchInput.blur();
   DOM.searchClearBtn.classList.add('is-hidden');
   DOM.searchRow.classList.remove('is-active');
-  DOM.chatList.classList.remove('is-hidden');
   DOM.searchState.classList.add('is-hidden');
+  document.getElementById('chatList').classList.remove('is-hidden');
   DOM.searchResultsList.classList.add('is-hidden');
   DOM.recentSearchSection.classList.remove('is-hidden');
   DOM.searchEmptyState.classList.add('is-hidden');
-  DOM.sidebarNav.classList.remove('search-mode');
 }
 
 function renderRecentSearches() {
@@ -400,7 +401,6 @@ function renderRecentSearches() {
       exitSearch();
       const full = findContact(c.id);
       openChat(c.id, chats.find(ch => ch.id === c.id) ? null : full);
-      toggleProfile(true);
     });
     DOM.recentSearchList.appendChild(li);
   });
@@ -459,20 +459,6 @@ function performSearch(query) {
   });
 }
 
-/* ---------------------------------------------------------------- AVATAR PREVIEW */
-
-function showAvatarPreview(letter, color) {
-  DOM.avatarPreviewLarge.textContent = letter;
-  DOM.avatarPreviewLarge.style.background = color;
-  DOM.avatarPreviewOverlay.classList.add('is-visible');
-}
-
-function setupAvatarPreviewClose() {
-  DOM.avatarPreviewOverlay.addEventListener('click', () => {
-    DOM.avatarPreviewOverlay.classList.remove('is-visible');
-  });
-}
-
 /* ---------------------------------------------------------------- PROFILE */
 
 function toggleProfile(open) {
@@ -487,26 +473,26 @@ function toggleProfile(open) {
     requestAnimationFrame(() => panel.classList.add('is-open'));
   } else {
     panel.classList.remove('is-open');
-    setTimeout(() => scrim.classList.add('is-hidden'), 400);
+    setTimeout(() => scrim.classList.add('is-hidden'), 460);
   }
 }
 
 function renderProfile(chat) {
   const media = (messagesData[chat.id] || []).filter(m => m.mediaType === 'image' || m.mediaType === 'video');
   const mediaHTML = media.length
-    ? `<div class="media-grid">${media.map(m => `<div class="media-grid__item"><img src="${m.mediaUrl || 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&q=80'}" alt=""></div>`).join('')}</div>`
+    ? `<div class="media-grid">${media.map(m => `<div class="media-grid__item" onclick="openAvatarLikePreview('${m.mediaUrl || 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&q=80'}')"><img src="${m.mediaUrl || 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&q=80'}" alt=""></div>`).join('')}</div>`
     : `<div class="info-group"><div class="media-empty">Общих медиафайлов пока нет</div></div>`;
 
-  DOM.profileContent.innerHTML = `
+  document.getElementById('profileContent').innerHTML = `
     <div class="profile-hero">
-      <div class="avatar avatar--xl" style="background:${chat.color}" onclick="showAvatarPreview('${chat.avatar}', '${chat.color}')">${chat.avatar}</div>
-      <h2>${escapeHtml(chat.name)}</h2>
+      <div class="avatar avatar--xl" style="background:${chat.color}" onclick="openAvatarPreview()">${chat.avatar}</div>
+      <h2 onclick="toggleProfile(false)">${escapeHtml(chat.name)}</h2>
       <p class="profile-hero__status ${chat.online ? 'online' : 'offline'}">${chat.online ? 'в сети' : 'не в сети'}</p>
 
       <div class="profile-actions">
         <button class="profile-action" onclick="showToast('Звонок…')">${ICONS.phone}<span>Аудио</span></button>
         <button class="profile-action" onclick="showToast('Видеозвонок…')">${ICONS.video}<span>Видео</span></button>
-        <button class="profile-action" onclick="toggleMuteChat(${chat.id})">${ICONS.muteFilled}<span>Без звука</span></button>
+        <button class="profile-action" onclick="toggleMuteChat(${chat.id})">${ICONS.mute}<span>Без звука</span></button>
         <button class="profile-action" onclick="enterSearchInChat()">${ICONS.search}<span>Поиск</span></button>
       </div>
     </div>
@@ -539,7 +525,31 @@ function enterSearchInChat() {
   showToast('Поиск по чату');
 }
 
-/* ---------------------------------------------------------------- SETTINGS (без кнопки «Готово») */
+/* ---------------------------------------------------------------- AVATAR PREVIEW */
+
+function openAvatarPreview() {
+  const chat = findContact(currentChatId);
+  if (!chat) return;
+  DOM.avatarPreview.style.background = chat.color;
+  DOM.avatarPreview.textContent = chat.avatar;
+  DOM.avatarPreview.style.backgroundImage = '';
+  DOM.avatarPreviewScrim.classList.remove('is-hidden');
+  requestAnimationFrame(() => DOM.avatarPreviewScrim.classList.add('is-open'));
+}
+
+function openAvatarLikePreview(imageUrl) {
+  DOM.avatarPreview.textContent = '';
+  DOM.avatarPreview.style.background = `#111 url('${imageUrl}') center/cover no-repeat`;
+  DOM.avatarPreviewScrim.classList.remove('is-hidden');
+  requestAnimationFrame(() => DOM.avatarPreviewScrim.classList.add('is-open'));
+}
+
+function closeAvatarPreview() {
+  DOM.avatarPreviewScrim.classList.remove('is-open');
+  setTimeout(() => DOM.avatarPreviewScrim.classList.add('is-hidden'), 280);
+}
+
+/* ---------------------------------------------------------------- SETTINGS */
 
 function renderSettings() {
   const chip = (bg) => `background:${bg}`;
@@ -559,7 +569,67 @@ function renderSettings() {
         <span class="settings-item__label">Уведомления и звуки</span>
         <span class="settings-item__chevron">${ICONS.chevron}</span>
       </div>
-      <!-- ... остальные пункты без изменений ... -->
+      <div class="settings-item is-tappable">
+        <span class="settings-icon" style="${chip('#34E572')}">${ICONS.lockFill}</span>
+        <span class="settings-item__label">Конфиденциальность</span>
+        <span class="settings-item__chevron">${ICONS.chevron}</span>
+      </div>
+      <div class="settings-item is-tappable">
+        <span class="settings-icon" style="${chip('#0A84FF')}">${ICONS.data}</span>
+        <span class="settings-item__label">Данные и память</span>
+        <span class="settings-item__chevron">${ICONS.chevron}</span>
+      </div>
+      <div class="settings-item is-tappable">
+        <span class="settings-icon" style="${chip('#BF5AF2')}">${ICONS.palette}</span>
+        <span class="settings-item__label">Оформление</span>
+        <span class="settings-item__chevron">${ICONS.chevron}</span>
+      </div>
+      <div class="settings-item is-tappable">
+        <span class="settings-icon" style="${chip('#64D2FF')}">${ICONS.globe}</span>
+        <span class="settings-item__label">Язык</span>
+        <span class="settings-item__value">Русский</span>
+        <span class="settings-item__chevron">${ICONS.chevron}</span>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-item is-tappable">
+        <span class="settings-icon" style="${chip('#5E5CE6')}">${ICONS.chatIcon}</span>
+        <span class="settings-item__label">Чаты</span>
+        <span class="settings-item__chevron">${ICONS.chevron}</span>
+      </div>
+      <div class="settings-item is-tappable">
+        <span class="settings-icon" style="${chip('#FF375F')}">${ICONS.folder}</span>
+        <span class="settings-item__label">Папки с чатами</span>
+        <span class="settings-item__chevron">${ICONS.chevron}</span>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-item">
+        <span class="settings-icon" style="${chip('#34E572')}">${ICONS.faceid}</span>
+        <span class="settings-item__label">Face ID</span>
+        <label class="toggle-switch"><input type="checkbox"><span class="slider"></span></label>
+      </div>
+      <div class="settings-item">
+        <span class="settings-icon" style="${chip('#8E8E93')}">${ICONS.lockFill}</span>
+        <span class="settings-item__label">Код-пароль</span>
+        <span class="settings-item__value">Выкл.</span>
+        <span class="settings-item__chevron">${ICONS.chevron}</span>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-item is-tappable">
+        <span class="settings-icon" style="${chip('#0A84FF')}">${ICONS.help}</span>
+        <span class="settings-item__label">Задать вопрос</span>
+        <span class="settings-item__chevron">${ICONS.chevron}</span>
+      </div>
+      <div class="settings-item is-tappable">
+        <span class="settings-icon" style="${chip('#8E8E93')}">${ICONS.help}</span>
+        <span class="settings-item__label">Политика конфиденциальности</span>
+        <span class="settings-item__chevron">${ICONS.chevron}</span>
+      </div>
     </div>
 
     <div class="settings-group">
@@ -573,21 +643,33 @@ function renderSettings() {
   `;
 }
 
-/* ---------------------------------------------------------------- CONTEXT MENU (улучшенный предпросмотр чата) */
+/* ---------------------------------------------------------------- CONTEXT MENU */
 
 function buildChatPreview(chat) {
   const msgs = messagesData[chat.id] || [];
-  const previewMsgs = msgs.slice(-4).map(m => {
-    const bubbleClass = m.type === 'out' ? 'bubble--out' : 'bubble--in';
-    return `<div class="bubble ${bubbleClass}" style="animation:none; max-width:100%; margin-bottom:4px;"><span class="bubble__text">${escapeHtml(m.text || '📷 Фото')}</span></div>`;
-  }).join('');
+  const recent = msgs.slice(-8);
+  const bubblesHTML = recent.length
+    ? recent.map(m => {
+        if (m.mediaType === 'image') {
+          return `<div class="bubble-row bubble-row--${m.type}"><div class="bubble bubble--${m.type} bubble--media"><img src="${m.mediaUrl}" alt=""><span class="bubble__meta"><span class="bubble__time">${m.time}</span></span></div></div>`;
+        }
+        if (m.mediaType === 'audio') {
+          return `<div class="bubble-row bubble-row--${m.type}"><div class="bubble bubble--${m.type} bubble--voice"><div class="play-btn">${ICONS.play}</div><div class="waveform"></div><span class="bubble__meta"><span class="bubble__time">${m.time}</span></span></div></div>`;
+        }
+        return `<div class="bubble-row bubble-row--${m.type}"><div class="bubble bubble--${m.type}"><span class="bubble__text">${escapeHtml(m.text)}</span><span class="bubble__meta"><span class="bubble__time">${m.time}</span></span></div></div>`;
+      }).join('')
+    : `<div class="ctx-preview-thread__empty">Сообщений пока нет</div>`;
+
   return `
-    <div class="ctx-preview-chat" style="padding: 10px; max-height: 180px; overflow-y: auto;">
-      <div class="avatar avatar--sm" style="background:${chat.color}; margin-right:8px;">${chat.avatar}</div>
-      <div style="flex:1;">
-        <div class="ctx-preview-chat__name" style="margin-bottom:6px;">${escapeHtml(chat.name)}</div>
-        ${previewMsgs}
+    <div class="ctx-preview-thread">
+      <div class="ctx-preview-thread__head">
+        <div class="avatar avatar--sm" style="background:${chat.color}">${chat.avatar}</div>
+        <div>
+          <div class="ctx-preview-thread__name">${escapeHtml(chat.name)}</div>
+          <div class="ctx-preview-thread__sub">${chat.online ? 'в сети' : 'не в сети'}</div>
+        </div>
       </div>
+      <div class="ctx-preview-thread__scroll" id="ctxThreadScroll">${bubblesHTML}</div>
     </div>
   `;
 }
@@ -595,7 +677,7 @@ function buildChatPreview(chat) {
 function chatContextActions(chat) {
   return [
     { icon: ICONS.pin, label: chat.pinned ? 'Открепить' : 'Закрепить', onClick: () => togglePinChat(chat.id) },
-    { icon: ICONS.muteFilled, label: chat.muted ? 'Включить звук' : 'Выключить звук', onClick: () => toggleMuteChat(chat.id) },
+    { icon: ICONS.mute, label: chat.muted ? 'Включить звук' : 'Выключить звук', onClick: () => toggleMuteChat(chat.id) },
     { icon: ICONS.trash, label: 'Удалить чат', danger: true, onClick: () => deleteChat(chat.id) }
   ];
 }
@@ -642,7 +724,7 @@ function openContextMenu(type, targetEl, anchorRect) {
     if (!msg) return;
     const clone = targetEl.cloneNode(true);
     clone.classList.remove('is-pressed');
-    previewHTML = `<div class="ctx-preview-bubble" style="display:flex; justify-content:${msg.type === 'out' ? 'flex-end' : 'flex-start'}; padding:14px;">${clone.outerHTML}</div>`;
+    previewHTML = `<div class="ctx-preview-bubble" style="display:flex; justify-content:${msg.type === 'out' ? 'flex-end' : 'flex-start'};">${clone.outerHTML}</div>`;
     actions = messageContextActions(msg);
   }
 
@@ -663,7 +745,7 @@ function openContextMenu(type, targetEl, anchorRect) {
   DOM.ctxScrim.classList.remove('is-hidden');
   DOM.ctxMenu.classList.remove('is-hidden');
 
-  const menuWidth = Math.min(300, window.innerWidth * 0.86);
+  const menuWidth = Math.min(300, window.innerWidth * 0.84);
   let left = anchorRect.left + anchorRect.width / 2 - menuWidth / 2;
   left = Math.max(12, Math.min(left, window.innerWidth - menuWidth - 12));
   let top = anchorRect.bottom + 10;
@@ -678,6 +760,9 @@ function openContextMenu(type, targetEl, anchorRect) {
       DOM.ctxMenu.style.top = top + 'px';
     }
     DOM.ctxMenu.classList.add('is-open');
+    // scroll thread preview to the bottom (most recent message), matching real chat view
+    const threadScroll = document.getElementById('ctxThreadScroll');
+    if (threadScroll) threadScroll.scrollTop = threadScroll.scrollHeight;
   });
 
   vibrate(15);
@@ -686,12 +771,19 @@ function openContextMenu(type, targetEl, anchorRect) {
 function closeContextMenu() {
   DOM.ctxMenu.classList.remove('is-open');
   DOM.ctxScrim.classList.add('is-hidden');
-  setTimeout(() => DOM.ctxMenu.classList.add('is-hidden'), 260);
+  setTimeout(() => DOM.ctxMenu.classList.add('is-hidden'), 300);
 }
 
 DOM.ctxScrim.addEventListener('click', closeContextMenu);
 
-/* Delegated long-press */
+/* Prevent the preview's internal scroll from being swallowed by the long-press
+   handler, and let touch scrolling inside it feel native/smooth. */
+DOM.ctxMenu.addEventListener('touchmove', (e) => {
+  if (e.target.closest('.ctx-preview-thread__scroll')) e.stopPropagation();
+}, { passive: true });
+
+/* ---------------------------------------------------------------- LONG PRESS */
+
 function setupLongPress() {
   attachLongPress(document.getElementById('chatList'), '.swipe-front.chat-item[data-chat-id]', 'chat');
   attachLongPress(document.getElementById('messagesArea'), '.bubble[data-msg-id]', 'message');
@@ -753,7 +845,7 @@ function showToast(text) {
 /* ---------------------------------------------------------------- SIDEBAR SCROLL */
 
 function setupSidebarScroll() {
-  const list = DOM.chatList;
+  const list = document.getElementById('chatList');
   const nav = DOM.sidebarNav;
   const onScroll = () => {
     if (list.scrollTop > 8) nav.classList.add('is-scrolled');
@@ -763,83 +855,78 @@ function setupSidebarScroll() {
   DOM.searchState.addEventListener('scroll', onScroll, { passive: true });
 }
 
-/* ---------------------------------------------------------------- SWIPE TO DELETE (улучшенный) */
+/* ---------------------------------------------------------------- SWIPE TO DELETE (rAF-smoothed) */
 
 function setupSwipeGestures() {
   const items = document.querySelectorAll('.swipe-front');
-  items.forEach(item => {
-    let startX = 0, currentX = 0, isDragging = false, startTime = 0;
-    let rafId = null;
+  const REVEAL = 76;
 
-    const updateTransform = (x) => {
-      item.style.transform = `translateX(${x}px)`;
+  items.forEach(item => {
+    const parent = item.closest('.swipe-item');
+    let startX = 0, startY = 0, deltaX = 0;
+    let dragging = false, decided = false, rafId = null;
+    let baseX = parent.classList.contains('is-revealed') ? -REVEAL : 0;
+
+    const applyTransform = () => {
+      rafId = null;
+      item.style.transform = `translateX(${deltaX}px)`;
+    };
+    const queueTransform = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(applyTransform);
     };
 
-    item.addEventListener('touchstart', e => {
-      startX = e.touches[0].clientX;
-      isDragging = true;
-      startTime = Date.now();
+    const onStart = (e) => {
+      const point = e.touches ? e.touches[0] : e;
+      startX = point.clientX; startY = point.clientY;
+      deltaX = baseX;
+      dragging = true; decided = false;
       item.classList.add('is-swiping');
-    }, { passive: true });
-
-    item.addEventListener('touchmove', e => {
-      if (!isDragging) return;
-      currentX = e.touches[0].clientX - startX;
-      if (currentX < 0 && currentX > -76) {
-        if (rafId) cancelAnimationFrame(rafId);
-        rafId = requestAnimationFrame(() => updateTransform(currentX));
+    };
+    const onMove = (e) => {
+      if (!dragging) return;
+      const point = e.touches ? e.touches[0] : e;
+      const dx = point.clientX - startX;
+      const dy = point.clientY - startY;
+      if (!decided) {
+        if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+          decided = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+        }
+        if (decided === 'y') { dragging = false; item.classList.remove('is-swiping'); return; }
       }
-    }, { passive: true });
-
-    item.addEventListener('touchend', () => {
-      isDragging = false;
+      if (decided !== 'x') return;
+      let next = baseX + dx;
+      next = Math.min(0, Math.max(-REVEAL - 24, next));
+      // rubber-band past the reveal point
+      if (next < -REVEAL) next = -REVEAL - (Math.abs(next + REVEAL) * 0.35);
+      deltaX = next;
+      parent.classList.toggle('is-dragging', deltaX < -6);
+      queueTransform();
+    };
+    const onEnd = () => {
+      if (!dragging) return;
+      dragging = false;
       item.classList.remove('is-swiping');
-      if (rafId) cancelAnimationFrame(rafId);
-      const velocity = Math.abs(currentX) / (Date.now() - startTime) * 1000;
-      if (currentX < -38 || velocity > 150) {
-        updateTransform(-76);
-        vibrate(20);
-      } else {
-        updateTransform(0);
-      }
-      currentX = 0;
-    });
+      const revealed = deltaX < -REVEAL / 2;
+      baseX = revealed ? -REVEAL : 0;
+      deltaX = baseX;
+      item.style.transform = `translateX(${baseX}px)`;
+      parent.classList.toggle('is-revealed', revealed);
+      parent.classList.toggle('is-dragging', false);
+      if (revealed) vibrate(18);
+    };
+
+    item.addEventListener('touchstart', onStart, { passive: true });
+    item.addEventListener('touchmove', onMove, { passive: true });
+    item.addEventListener('touchend', onEnd);
+    item.addEventListener('touchcancel', onEnd);
   });
 }
 
-/* ---------------------------------------------------------------- VOICE / VIDEO RECORDING (камера) */
+/* ---------------------------------------------------------------- VOICE / VIDEO RECORDING */
 
-async function startCamera() {
-  if (stream) return;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: true });
-    DOM.recordCameraPreview.innerHTML = '';
-    const video = document.createElement('video');
-    video.srcObject = stream;
-    video.autoplay = true;
-    video.muted = true;
-    video.playsInline = true;
-    DOM.recordCameraPreview.appendChild(video);
-    DOM.recordFlipBtn.classList.remove('is-hidden');
-  } catch (e) {
-    DOM.recordCameraPreview.innerHTML = 'Камера недоступна';
-    DOM.recordFlipBtn.classList.add('is-hidden');
-  }
-}
-
-function stopCamera() {
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop());
-    stream = null;
-  }
-  DOM.recordCameraPreview.innerHTML = '📷';
-}
-
-function flipCamera() {
-  facingMode = facingMode === 'user' ? 'environment' : 'user';
-  stopCamera();
-  startCamera();
-}
+let videoStream = null;
+let currentFacing = 'user';
 
 function setupRecordingGestures() {
   let recordTimeout, timerInterval;
@@ -860,31 +947,61 @@ function setupRecordingGestures() {
     vibrate(10);
   });
 
+  async function startVideoPreview() {
+    try {
+      videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing }, audio: true });
+      DOM.videoPreviewEl.srcObject = videoStream;
+      DOM.videoPreviewEl.classList.toggle('is-rear', currentFacing === 'environment');
+    } catch (err) {
+      showToast('Нет доступа к камере');
+    }
+  }
+  function stopVideoPreview() {
+    if (videoStream) {
+      videoStream.getTracks().forEach(t => t.stop());
+      videoStream = null;
+    }
+  }
+
+  DOM.videoFlipBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    currentFacing = currentFacing === 'user' ? 'environment' : 'user';
+    stopVideoPreview();
+    await startVideoPreview();
+    vibrate(10);
+  });
+
   const startRecording = (e) => {
     if (DOM.messageInput.value.trim().length > 0) return;
     startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
 
-    recordTimeout = setTimeout(() => {
+    recordTimeout = setTimeout(async () => {
       isRecording = true;
       vibrate([20, 40, 20]);
-      DOM.recordOverlay.classList.add('is-active');
-      DOM.composerMain.classList.add('is-recording');
+      seconds = 0;
 
       if (recordMode === 'video') {
-        startCamera();
-        DOM.recordCameraPreview.classList.remove('is-hidden');
+        DOM.videoRecordOverlay.classList.remove('is-hidden');
+        await startVideoPreview();
+        requestAnimationFrame(() => DOM.videoRecordOverlay.classList.add('is-active'));
+        DOM.videoRecordTimer.textContent = '00:00';
+        timerInterval = setInterval(() => {
+          seconds++;
+          const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+          const s = (seconds % 60).toString().padStart(2, '0');
+          DOM.videoRecordTimer.textContent = `${m}:${s}`;
+        }, 1000);
       } else {
-        DOM.recordCameraPreview.classList.add('is-hidden');
+        DOM.recordOverlay.classList.add('is-active');
+        DOM.composerMain.classList.add('is-recording');
+        DOM.recordTimer.textContent = '00:00';
+        timerInterval = setInterval(() => {
+          seconds++;
+          const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+          const s = (seconds % 60).toString().padStart(2, '0');
+          DOM.recordTimer.textContent = `${m}:${s}`;
+        }, 1000);
       }
-
-      seconds = 0;
-      DOM.recordTimer.textContent = "00:00";
-      timerInterval = setInterval(() => {
-        seconds++;
-        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-        const s = (seconds % 60).toString().padStart(2, '0');
-        DOM.recordTimer.textContent = `${m}:${s}`;
-      }, 1000);
     }, 250);
   };
 
@@ -892,15 +1009,15 @@ function setupRecordingGestures() {
     if (!isRecording) return;
     const currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
     const diff = startX - currentX;
+    const hintEl = recordMode === 'video' ? DOM.videoRecordOverlay.querySelector('.video-record-hint') : DOM.slideCancelText;
 
     if (diff > 0 && diff < 120) {
-      DOM.slideCancelText.style.transform = `translateX(-${diff}px)`;
-      DOM.slideCancelText.style.opacity = 1 - (diff / 100);
+      hintEl.style.transform = `translateX(-${diff}px)`;
+      hintEl.style.opacity = 1 - (diff / 100);
     }
     if (diff > 100) {
       isRecording = false;
       clearInterval(timerInterval);
-      stopCamera();
       resetRecordUI();
       vibrate(40);
     }
@@ -911,9 +1028,9 @@ function setupRecordingGestures() {
     if (isRecording) {
       isRecording = false;
       clearInterval(timerInterval);
-      stopCamera();
+      const wasVideo = recordMode === 'video';
       resetRecordUI();
-      if (seconds > 0) sendMessage('', recordMode);
+      if (seconds > 0) sendMessage('', wasVideo ? 'video' : 'audio');
     }
   };
 
@@ -922,6 +1039,15 @@ function setupRecordingGestures() {
     DOM.composerMain.classList.remove('is-recording');
     DOM.slideCancelText.style.transform = `translateX(0)`;
     DOM.slideCancelText.style.opacity = 1;
+
+    DOM.videoRecordOverlay.classList.remove('is-active');
+    const hint = DOM.videoRecordOverlay.querySelector('.video-record-hint');
+    hint.style.transform = `translateX(0)`;
+    hint.style.opacity = 1;
+    setTimeout(() => {
+      DOM.videoRecordOverlay.classList.add('is-hidden');
+      stopVideoPreview();
+    }, 320);
   };
 
   DOM.mediaBtn.addEventListener('mousedown', startRecording);
@@ -930,8 +1056,6 @@ function setupRecordingGestures() {
   document.addEventListener('touchmove', moveRecording, { passive: true });
   document.addEventListener('mouseup', stopRecording);
   document.addEventListener('touchend', stopRecording);
-
-  DOM.recordFlipBtn.addEventListener('click', flipCamera);
 }
 
 /* ---------------------------------------------------------------- GENERAL EVENTS */
@@ -972,9 +1096,10 @@ function setupEventListeners() {
     performSearch('');
   });
 
-  // Prevent iOS Safari's rubber-band scroll on the whole page
+  // Prevent iOS Safari's rubber-band scroll on the whole page, while still
+  // allowing native scroll inside any designated scrollable region.
   document.body.addEventListener('touchmove', (e) => {
-    if (!e.target.closest('.messages, .sidebar__list, .search-state, .slide-panel__content, .composer__input, .ctx-preview-bubble')) {
+    if (!e.target.closest('.messages, .sidebar__list, .search-state, .slide-panel__content, .composer__input, .ctx-preview-thread__scroll')) {
       e.preventDefault();
     }
   }, { passive: false });
@@ -1009,7 +1134,7 @@ window.toggleSettings = (open) => {
     requestAnimationFrame(() => panel.classList.add('is-open'));
   } else {
     panel.classList.remove('is-open');
-    setTimeout(() => scrim.classList.add('is-hidden'), 400);
+    setTimeout(() => scrim.classList.add('is-hidden'), 460);
   }
 };
 
@@ -1020,12 +1145,10 @@ window.toggleNewChat = (open) => {
   const scrim = document.getElementById('newChatScrim');
   if (open) {
     scrim.classList.remove('is-hidden');
-    panel.style.height = '100dvh'; // на весь экран
-    panel.style.borderRadius = '0';
     requestAnimationFrame(() => panel.classList.add('is-open'));
   } else {
     panel.classList.remove('is-open');
-    setTimeout(() => scrim.classList.add('is-hidden'), 400);
+    setTimeout(() => scrim.classList.add('is-hidden'), 460);
   }
 };
 
@@ -1039,6 +1162,8 @@ window.clearRecentSearches = clearRecentSearches;
 window.exitSearch = exitSearch;
 window.enterSearchInChat = enterSearchInChat;
 window.showToast = showToast;
-window.showAvatarPreview = showAvatarPreview;
+window.openAvatarPreview = openAvatarPreview;
+window.openAvatarLikePreview = openAvatarLikePreview;
+window.closeAvatarPreview = closeAvatarPreview;
 
 init();
