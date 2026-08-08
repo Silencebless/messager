@@ -1,178 +1,414 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // --- Navigation System ---
-    const views = {
-        chats: document.getElementById('view-chats'),
-        settings: document.getElementById('view-settings'),
-        chatRoom: document.getElementById('view-chat-room')
-    };
-    
-    let viewStack = ['chats'];
+// script.js
 
-    function navigateTo(viewId) {
-        const currentView = views[viewStack[viewStack.length - 1]];
-        const nextView = views[viewId.replace('view-', '')];
-        
-        if(!nextView) return;
+// --- Data ---
+const currentUser = {
+    name: 'Александр',
+    tag: '@alexander',
+    phone: '+7 (999) 123-45-67',
+    birth: '15 марта 1995',
+    description: 'Жизнь — это путешествие 🌍',
+    avatar: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 40 40\'%3E%3Ccircle cx=\'20\' cy=\'20\' r=\'20\' fill=\'%23587a9e\'/%3E%3Ccircle cx=\'20\' cy=\'14\' r=\'6\' fill=\'%23a8c8e8\'/%3E%3Cellipse cx=\'20\' cy=\'34\' rx=\'12\' ry=\'8\' fill=\'%23a8c8e8\'/%3E%3C/svg%3E'
+};
 
-        currentView.classList.remove('active');
-        currentView.classList.add('left-hidden');
-        
-        nextView.classList.add('active');
-        nextView.classList.remove('right');
-        
-        viewStack.push(viewId.replace('view-', ''));
-    }
+const contacts = [
+    { id: 1, name: 'Мария', avatar: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 40 40\'%3E%3Ccircle cx=\'20\' cy=\'20\' r=\'20\' fill=\'%238a6b9e\'/%3E%3Ccircle cx=\'20\' cy=\'14\' r=\'6\' fill=\'%23d4b8e8\'/%3E%3Cellipse cx=\'20\' cy=\'34\' rx=\'12\' ry=\'8\' fill=\'%23d4b8e8\'/%3E%3C/svg%3E', status: 'была недавно', tag: '@maria', phone: '+7 (999) 234-56-78', birth: '22 июня 1997', description: 'Люблю кофе и книги ☕📚' },
+    { id: 2, name: 'Дмитрий', avatar: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 40 40\'%3E%3Ccircle cx=\'20\' cy=\'20\' r=\'20\' fill=\'%23587a9e\'/%3E%3Ccircle cx=\'20\' cy=\'14\' r=\'6\' fill=\'%23a8c8e8\'/%3E%3Cellipse cx=\'20\' cy=\'34\' rx=\'12\' ry=\'8\' fill=\'%23a8c8e8\'/%3E%3C/svg%3E', status: 'в сети', tag: '@dmitry', phone: '+7 (999) 345-67-89', birth: '5 октября 1993', description: 'Разработчик 👨‍💻' },
+    { id: 3, name: 'Елена', avatar: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 40 40\'%3E%3Ccircle cx=\'20\' cy=\'20\' r=\'20\' fill=\'%239e6b6b\'/%3E%3Ccircle cx=\'20\' cy=\'14\' r=\'6\' fill=\'%23e8b8b8\'/%3E%3Cellipse cx=\'20\' cy=\'34\' rx=\'12\' ry=\'8\' fill=\'%23e8b8b8\'/%3E%3C/svg%3E', status: 'была вчера', tag: '@elena', phone: '+7 (999) 456-78-90', birth: '11 ноября 1999', description: 'Путешественница ✈️' },
+    { id: 4, name: 'Алексей', avatar: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 40 40\'%3E%3Ccircle cx=\'20\' cy=\'20\' r=\'20\' fill=\'%235e9e6b\'/%3E%3Ccircle cx=\'20\' cy=\'14\' r=\'6\' fill=\'%23b8e8b8\'/%3E%3Cellipse cx=\'20\' cy=\'34\' rx=\'12\' ry=\'8\' fill=\'%23b8e8b8\'/%3E%3C/svg%3E', status: 'был недавно', tag: '@alexey', phone: '+7 (999) 567-89-01', birth: '30 апреля 1996', description: 'Спортсмен 🏋️' }
+];
 
-    function goBack() {
-        if(viewStack.length <= 1) return;
-        
-        const currentView = views[viewStack.pop()];
-        const prevView = views[viewStack[viewStack.length - 1]];
+let chatsData = [
+    { id: 1, contactId: 1, messages: [
+        { sender: 'me', text: 'Привет! Как дела?', time: '12:30', status: 'read' },
+        { sender: 'contact', text: 'Привет! Всё отлично, спасибо :)', time: '12:31' },
+        { sender: 'me', text: 'Чем занимаешься?', time: '12:32', status: 'delivered' }
+    ], unread: 0, muted: false, lastMessage: 'Чем занимаешься?', lastTime: '12:32' },
+    { id: 2, contactId: 2, messages: [
+        { sender: 'contact', text: 'Встречаемся завтра в 10', time: 'Пн' }
+    ], unread: 2, muted: true, lastMessage: 'Встречаемся завтра в 10', lastTime: 'Пн' },
+    { id: 3, contactId: 3, messages: [
+        { sender: 'contact', text: 'Скинь фото с отпуска', time: 'Вчера' }
+    ], unread: 0, muted: false, lastMessage: 'Скинь фото с отпуска', lastTime: 'Вчера' },
+    { id: 4, contactId: 4, messages: [], unread: 0, muted: false, lastMessage: 'Нет сообщений', lastTime: '' }
+];
 
-        currentView.classList.remove('active');
-        currentView.classList.add('right');
-        
-        prevView.classList.remove('left-hidden');
-        prevView.classList.add('active');
-    }
+let currentChatId = null;
+let longPressTimer = null;
+let startX = 0;
+let currentSwipeItem = null;
 
-    // Bind Navigation Buttons
-    document.querySelector('.profile-trigger').addEventListener('click', () => navigateTo('view-settings'));
-    
-    document.querySelectorAll('.btn-back').forEach(btn => {
-        btn.addEventListener('click', goBack);
+// --- DOM Elements ---
+const views = {
+    main: document.getElementById('mainView'),
+    settings: document.getElementById('settingsView'),
+    profile: document.getElementById('profileView'),
+    editProfile: document.getElementById('editProfileView'),
+    chat: document.getElementById('chatView'),
+    contactProfile: document.getElementById('contactProfileView')
+};
+
+const chatList = document.getElementById('chatList');
+const messagesContainer = document.getElementById('messagesContainer');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+const micIcon = document.getElementById('micIcon');
+const cameraIcon = document.getElementById('cameraIcon');
+const sendIcon = document.getElementById('sendIcon');
+const newChatModal = document.getElementById('newChatModal');
+const newChatSheet = document.getElementById('newChatSheet');
+const previewOverlay = document.getElementById('previewOverlay');
+const previewWindow = document.getElementById('previewWindow');
+const previewMessages = document.getElementById('previewMessages');
+const previewActions = document.getElementById('previewActions');
+const avatarPreviewOverlay = document.getElementById('avatarPreviewOverlay');
+const avatarPreviewImg = document.getElementById('avatarPreviewImg');
+const voiceOverlay = document.getElementById('voiceOverlay');
+
+// --- Navigation ---
+function navigateTo(viewId) {
+    Object.values(views).forEach(v => {
+        if (v.classList.contains('active')) {
+            v.classList.add('exit-left');
+            setTimeout(() => v.classList.remove('active', 'exit-left'), 300);
+        }
     });
+    setTimeout(() => {
+        document.getElementById(viewId).classList.add('active');
+    }, 100);
+}
 
-    document.querySelectorAll('.chat-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-            // Prevent navigation if we are swiping
-            if(card.style.transform !== '' && card.style.transform !== 'translateX(0px)') {
-                card.style.transform = 'translateX(0px)';
+function goBack(currentViewId, targetViewId = 'mainView') {
+    const current = document.getElementById(currentViewId);
+    if (current) {
+        current.classList.add('exit-left');
+        setTimeout(() => current.classList.remove('active', 'exit-left'), 300);
+    }
+    setTimeout(() => {
+        document.getElementById(targetViewId).classList.add('active');
+    }, 100);
+}
+
+// --- Render Chat List ---
+function renderChatList() {
+    chatList.innerHTML = '';
+    chatsData.forEach(chat => {
+        const contact = contacts.find(c => c.id === chat.contactId);
+        if (!contact) return;
+        const item = document.createElement('div');
+        item.className = 'chat-item';
+        item.dataset.chatId = chat.id;
+        item.innerHTML = `
+            <img src="${contact.avatar}" alt="${contact.name}" class="chat-avatar">
+            <div class="chat-content">
+                <div class="chat-header-row">
+                    <span class="chat-name">${contact.name} ${chat.muted ? '<span class="mute-icon">🔇</span>' : ''}</span>
+                    <span class="chat-time">${chat.lastTime}</span>
+                </div>
+                <div class="chat-footer">
+                    <span class="chat-last-msg">${chat.lastMessage}</span>
+                    ${chat.unread > 0 ? `<span class="unread-badge">${chat.unread}</span>` : ''}
+                </div>
+            </div>
+            <div class="swipe-actions">
+                <div class="swipe-btn swipe-delete">Удалить</div>
+                <div class="swipe-btn swipe-mute">Заглушить</div>
+            </div>
+        `;
+        // Click -> open chat
+        item.addEventListener('click', (e) => {
+            if (item.classList.contains('swiped')) {
+                e.preventDefault();
                 return;
             }
-            navigateTo('view-chat-room');
+            openChat(chat.id);
         });
+        // Long press -> preview
+        item.addEventListener('touchstart', (e) => startLongPress(e, chat, item));
+        item.addEventListener('touchend', cancelLongPress);
+        item.addEventListener('touchmove', cancelLongPress);
+        item.addEventListener('mousedown', (e) => startLongPress(e, chat, item));
+        item.addEventListener('mouseup', cancelLongPress);
+        item.addEventListener('mouseleave', cancelLongPress);
+        // Swipe
+        item.addEventListener('touchstart', handleSwipeStart, { passive: true });
+        item.addEventListener('touchmove', handleSwipeMove, { passive: false });
+        item.addEventListener('touchend', handleSwipeEnd);
+        chatList.appendChild(item);
     });
+}
 
-    // --- Bottom Sheet Modal (New Chat) ---
-    const btnNewChat = document.getElementById('btn-new-chat');
-    const modalNewChat = document.getElementById('modal-new-chat');
-    
-    btnNewChat.addEventListener('click', () => {
-        modalNewChat.classList.add('active');
-    });
-    document.querySelector('[data-close="modal-new-chat"]').addEventListener('click', () => {
-        modalNewChat.classList.remove('active');
-    });
+// --- Long press preview ---
+function startLongPress(e, chat, element) {
+    longPressTimer = setTimeout(() => {
+        showPreview(chat);
+    }, 500);
+}
+function cancelLongPress() {
+    clearTimeout(longPressTimer);
+}
 
-    // --- Input Area Logic (Mic -> Camera -> Send) ---
-    const msgInput = document.getElementById('msg-input');
-    const btnAction = document.getElementById('btn-msg-action');
-    let inputState = 'mic'; // mic, cam, send
-
-    const icons = {
-        mic: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>`,
-        cam: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`,
-        send: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`
+function showPreview(chat) {
+    const contact = contacts.find(c => c.id === chat.contactId);
+    previewMessages.innerHTML = chat.messages.slice(-4).map(m => 
+        `<div style="margin-bottom:6px;color:${m.sender==='me'?'#0A84FF':'white'}">${m.text}</div>`
+    ).join('');
+    previewOverlay.classList.add('active');
+    previewActions.innerHTML = `
+        <button class="preview-action-btn glass-panel">📥 Архивировать</button>
+        <button class="preview-action-btn glass-panel">📌 Закрепить</button>
+    `;
+    previewActions.onclick = (e) => {
+        if (e.target.classList.contains('preview-action-btn')) {
+            previewOverlay.classList.remove('active');
+        }
     };
+    previewOverlay.onclick = (e) => {
+        if (e.target === previewOverlay) previewOverlay.classList.remove('active');
+    };
+}
 
-    msgInput.addEventListener('input', () => {
-        if(msgInput.value.trim().length > 0) {
-            if(inputState !== 'send') {
-                inputState = 'send';
-                btnAction.innerHTML = icons.send;
-            }
+// --- Swipe ---
+function handleSwipeStart(e) {
+    startX = e.touches[0].clientX;
+    const item = e.currentTarget;
+    if (item.classList.contains('swiped')) {
+        currentSwipeItem = item;
+    } else {
+        currentSwipeItem = null;
+    }
+}
+function handleSwipeMove(e) {
+    if (!currentSwipeItem) return;
+    const dx = e.touches[0].clientX - startX;
+    if (dx < -30) {
+        currentSwipeItem.classList.add('swiped');
+    } else if (dx > 30) {
+        currentSwipeItem.classList.remove('swiped');
+    }
+}
+function handleSwipeEnd(e) {
+    if (currentSwipeItem && !currentSwipeItem.classList.contains('swiped')) {
+        // maybe close if swiped back
+    }
+    currentSwipeItem = null;
+}
+
+// Swipe delete/mute actions
+chatList.addEventListener('click', (e) => {
+    if (e.target.classList.contains('swipe-delete')) {
+        const item = e.target.closest('.chat-item');
+        const chatId = parseInt(item.dataset.chatId);
+        chatsData = chatsData.filter(c => c.id !== chatId);
+        renderChatList();
+    }
+    if (e.target.classList.contains('swipe-mute')) {
+        const item = e.target.closest('.chat-item');
+        const chatId = parseInt(item.dataset.chatId);
+        const chat = chatsData.find(c => c.id === chatId);
+        if (chat) {
+            chat.muted = !chat.muted;
+            renderChatList();
+            item.classList.remove('swiped');
+        }
+    }
+});
+
+// --- Open Chat ---
+function openChat(chatId) {
+    currentChatId = chatId;
+    const chat = chatsData.find(c => c.id === chatId);
+    const contact = contacts.find(c => c.id === chat.contactId);
+    document.getElementById('chatContactName').textContent = contact.name;
+    document.getElementById('chatContactStatus').textContent = contact.status;
+    document.querySelector('.chat-avatar-btn .avatar-img').src = contact.avatar;
+    renderMessages(chat.messages);
+    navigateTo('chatView');
+    messageInput.value = '';
+    updateSendButton();
+    // scroll to bottom
+    setTimeout(() => {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }, 100);
+}
+
+function renderMessages(messages) {
+    messagesContainer.innerHTML = '';
+    messages.forEach((msg, idx) => {
+        const row = document.createElement('div');
+        row.className = `message-row ${msg.sender === 'me' ? 'sent' : 'received'}`;
+        let bubbleContent = '';
+        if (msg.replyTo) {
+            bubbleContent += `<div class="reply-preview">↩ ${msg.replyTo}</div>`;
+        }
+        bubbleContent += `<div class="message-bubble">${msg.text}</div>`;
+        if (msg.sender === 'me') {
+            bubbleContent += `<div class="message-status">${msg.status === 'read' ? 'Прочитано ✓✓' : msg.status === 'delivered' ? 'Доставлено ✓' : 'Отправлено'}</div>`;
+        }
+        row.innerHTML = bubbleContent;
+        messagesContainer.appendChild(row);
+    });
+}
+
+// --- Send message ---
+function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text || !currentChatId) return;
+    const chat = chatsData.find(c => c.id === currentChatId);
+    const newMsg = { sender: 'me', text, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), status: 'sent' };
+    chat.messages.push(newMsg);
+    chat.lastMessage = text;
+    chat.lastTime = 'Сейчас';
+    chat.unread = 0;
+    renderMessages(chat.messages);
+    messageInput.value = '';
+    updateSendButton();
+    renderChatList();
+    setTimeout(() => {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        // Simulate read receipt
+        newMsg.status = 'delivered';
+        renderMessages(chat.messages);
+        setTimeout(() => {
+            newMsg.status = 'read';
+            renderMessages(chat.messages);
+        }, 1500);
+    }, 300);
+}
+
+// --- Input / Send button logic ---
+messageInput.addEventListener('input', updateSendButton);
+function updateSendButton() {
+    const hasText = messageInput.value.trim().length > 0;
+    micIcon.classList.toggle('hidden', hasText);
+    cameraIcon.classList.toggle('hidden', hasText);
+    sendIcon.classList.toggle('hidden', !hasText);
+}
+
+sendBtn.addEventListener('click', () => {
+    if (!messageInput.value.trim()) {
+        // Toggle camera/mic? For now just send if text exists
+        if (micIcon.classList.contains('hidden')) {
+            // camera mode: trigger camera? just placeholder
         } else {
-            inputState = 'mic';
-            btnAction.innerHTML = icons.mic;
+            // mic mode: start voice? show voice overlay
+            voiceOverlay.classList.remove('hidden');
+            setTimeout(() => voiceOverlay.classList.add('hidden'), 2000);
         }
-    });
+    } else {
+        sendMessage();
+    }
+});
 
-    btnAction.addEventListener('click', () => {
-        if(inputState === 'mic') {
-            inputState = 'cam';
-            btnAction.innerHTML = icons.cam;
-        } else if(inputState === 'cam') {
-            inputState = 'mic';
-            btnAction.innerHTML = icons.mic;
-        } else if(inputState === 'send') {
-            // Logic to send msg, then reset to mic
-            msgInput.value = '';
-            inputState = 'mic';
-            btnAction.innerHTML = icons.mic;
-        }
-    });
+messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
 
-    // --- Swipe & Long Press Logic for Chat Cards ---
-    let startX = 0, currentX = 0;
-    let holdTimer = null;
-    let isSwiping = false;
+// --- Settings navigation ---
+document.getElementById('settingsBtn').addEventListener('click', () => navigateTo('settingsView'));
+document.getElementById('settingsBackBtn').addEventListener('click', () => goBack('settingsView'));
+document.getElementById('profileBlock').addEventListener('click', () => navigateTo('profileView'));
+document.getElementById('profileBackBtn').addEventListener('click', () => goBack('profileView', 'settingsView'));
+document.getElementById('editProfileBtn').addEventListener('click', () => navigateTo('editProfileView'));
+document.getElementById('editProfileBackBtn').addEventListener('click', () => goBack('editProfileView', 'profileView'));
+document.getElementById('editProfileDoneBtn').addEventListener('click', () => goBack('editProfileView', 'profileView'));
 
-    const modalPreview = document.getElementById('modal-preview');
-    const previewContent = document.getElementById('preview-content');
-    const modalAvatar = document.getElementById('modal-avatar');
+// --- Chat header buttons ---
+document.getElementById('chatBackBtn').addEventListener('click', () => goBack('chatView'));
+document.getElementById('chatContactInfo').addEventListener('click', () => {
+    const chat = chatsData.find(c => c.id === currentChatId);
+    const contact = contacts.find(c => c.id === chat.contactId);
+    renderContactProfile(contact);
+    navigateTo('contactProfileView');
+});
+document.getElementById('chatAvatarBtn').addEventListener('click', () => {
+    const chat = chatsData.find(c => c.id === currentChatId);
+    const contact = contacts.find(c => c.id === chat.contactId);
+    avatarPreviewImg.src = contact.avatar;
+    avatarPreviewOverlay.classList.add('active');
+});
+document.getElementById('contactProfileBackBtn').addEventListener('click', () => goBack('contactProfileView', 'chatView'));
+avatarPreviewOverlay.addEventListener('click', () => avatarPreviewOverlay.classList.remove('active'));
 
-    document.querySelectorAll('.chat-card').forEach(card => {
-        card.addEventListener('touchstart', (e) => {
-            startX = e.touches[0].clientX;
-            isSwiping = false;
-            
-            // Start Long Press timer
-            holdTimer = setTimeout(() => {
-                if(!isSwiping) {
-                    navigator.vibrate && navigator.vibrate(50); // Haptic feedback
-                    // Setup preview content
-                    previewContent.innerHTML = `<div style="padding:20px;text-align:center;">
-                        <h2>${card.querySelector('.chat-name').innerText}</h2>
-                        <p style="color:var(--text-secondary);margin-top:10px">Предпросмотр чата...</p>
-                    </div>`;
-                    modalPreview.classList.add('active');
-                }
-            }, 500); // 500ms hold
-        }, {passive: true});
+function renderContactProfile(contact) {
+    const container = document.getElementById('contactProfileContent');
+    container.innerHTML = `
+        <img src="${contact.avatar}" alt="${contact.name}" class="contact-avatar">
+        <h2 class="contact-name">${contact.name}</h2>
+        <p class="contact-status">${contact.status}</p>
+        <div class="contact-actions">
+            <button class="contact-action-btn"><span class="contact-action-icon">📞</span>Аудио</button>
+            <button class="contact-action-btn"><span class="contact-action-icon">📹</span>Видео</button>
+            <button class="contact-action-btn"><span class="contact-action-icon">🔇</span>Без звука</button>
+            <button class="contact-action-btn"><span class="contact-action-icon">🔍</span>Поиск</button>
+        </div>
+        <div class="contact-track glass-panel">
+            <div class="track-cover">🎵</div>
+            <div class="track-info">
+                <span class="track-title">Blinding Lights</span>
+                <span class="track-artist">The Weeknd</span>
+            </div>
+        </div>
+        <div class="contact-info-card glass-panel">
+            <div class="info-row"><span class="info-label">Номер</span><span class="info-value">${contact.phone}</span></div>
+            <div class="info-row"><span class="info-label">Тег</span><span class="info-value">${contact.tag}</span></div>
+            <div class="info-row"><span class="info-label">Дата рождения</span><span class="info-value">${contact.birth}</span></div>
+            <div class="info-row last"><span class="info-label">Описание</span><span class="info-value">${contact.description}</span></div>
+        </div>
+        <div class="settings-block glass-panel" style="width:100%; padding: 14px 16px; text-align:center; color:var(--text-secondary);">Общие медиа</div>
+    `;
+}
 
-        card.addEventListener('touchmove', (e) => {
-            currentX = e.touches[0].clientX;
-            const diffX = currentX - startX;
-            
-            if(Math.abs(diffX) > 10) {
-                isSwiping = true;
-                clearTimeout(holdTimer);
+// --- New Chat Modal ---
+document.getElementById('newChatBtn').addEventListener('click', () => {
+    newChatModal.classList.add('active');
+    renderModalContacts();
+});
+newChatModal.addEventListener('click', (e) => {
+    if (e.target === newChatModal) newChatModal.classList.remove('active');
+});
+function renderModalContacts() {
+    const container = document.getElementById('modalContacts');
+    container.innerHTML = '<h4 style="margin:12px 0;color:var(--text-secondary);">Контакты</h4>';
+    contacts.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'chat-item';
+        div.innerHTML = `
+            <img src="${c.avatar}" class="chat-avatar">
+            <div class="chat-content">
+                <span class="chat-name">${c.name}</span>
+                <span class="chat-last-msg">${c.tag}</span>
+            </div>
+        `;
+        div.addEventListener('click', () => {
+            // Start chat with contact
+            let chat = chatsData.find(ch => ch.contactId === c.id);
+            if (!chat) {
+                chat = {
+                    id: Date.now(),
+                    contactId: c.id,
+                    messages: [],
+                    unread: 0,
+                    muted: false,
+                    lastMessage: 'Нет сообщений',
+                    lastTime: ''
+                };
+                chatsData.unshift(chat);
             }
-
-            // Swipe Left only
-            if(diffX < 0 && diffX > -140) {
-                card.style.transform = `translateX(${diffX}px)`;
-                card.style.transition = 'none';
-            }
-        }, {passive: true});
-
-        card.addEventListener('touchend', (e) => {
-            clearTimeout(holdTimer);
-            card.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
-            const diffX = currentX - startX;
-
-            if(diffX < -60) {
-                // Snap open actions
-                card.style.transform = `translateX(-140px)`;
-            } else {
-                // Snap closed
-                card.style.transform = `translateX(0px)`;
-            }
+            newChatModal.classList.remove('active');
+            openChat(chat.id);
+            renderChatList();
         });
+        container.appendChild(div);
     });
+}
 
-    // Close Modals on background click
-    document.querySelectorAll('.blur-bg').forEach(bg => {
-        bg.addEventListener('click', (e) => {
-            e.target.parentElement.classList.remove('active');
-        });
-    });
+// --- Init ---
+renderChatList();
+updateSendButton();
 
-    // Avatar preview in Header
-    document.querySelector('.chat-header-avatar').addEventListener('click', (e) => {
-        const bgImg = window.getComputedStyle(e.target).backgroundImage;
-        document.getElementById('avatar-large-view').style.backgroundImage = bgImg;
-        modalAvatar.classList.add('active');
-    });
+// Hide preview overlay on click outside
+previewOverlay.addEventListener('click', (e) => {
+    if (e.target === previewOverlay) previewOverlay.classList.remove('active');
 });
