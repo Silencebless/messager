@@ -468,7 +468,7 @@ function chatCardHTML(chat) {
         '<button class="swipe-action swipe-action--delete" data-action="delete" data-id="' + chat.id + '"><i class="icon" data-icon="trash"></i><span>Удалить</span></button>' +
       '</div>' +
       '<div class="chat-card-swipe" data-id="' + chat.id + '">' +
-        '<div class="chat-card-main pressable" data-id="' + chat.id + '">' +
+        '<div class="chat-card-main" data-id="' + chat.id + '">' +
           '<span class="avatar avatar--stretch" style="--c1:' + chat.palette[0] + ';--c2:' + chat.palette[1] + '"><span>' + chat.initials + '</span></span>' +
           '<span class="chat-card-body">' +
             '<span class="chat-card-top">' +
@@ -534,16 +534,20 @@ function openSwipeFor(id) {
 
 function initChatListGestures() {
   D.chatList.addEventListener('pointerdown', function (e) {
+    if (e.target.closest('.chat-card-actions')) return; // let Delete/Mute handle their own tap
     var main = e.target.closest('.chat-card-main');
-    if (!main) return;
-    var id = Number(main.dataset.id);
+    var id = main ? Number(main.dataset.id) : null;
 
     if (openSwipeId !== null && openSwipeId !== id) closeSwipe(openSwipeId);
+    if (!main || gesture) return; // no card here, or a gesture is already in progress (ignore extra fingers)
 
     var swipeEl = D.chatList.querySelector('.chat-card-swipe[data-id="' + id + '"]');
+    try { main.setPointerCapture(e.pointerId); } catch (err) {}
+
     gesture = {
       id: id, mainEl: main, swipeEl: swipeEl,
       startX: e.clientX, startY: e.clientY,
+      lastX: e.clientX, lastT: Date.now(), velocity: 0,
       baseOffset: openSwipeId === id ? SWIPE_OPEN : 0,
       moved: false, swiping: false, longFired: false,
       pointerId: e.pointerId
@@ -558,7 +562,7 @@ function initChatListGestures() {
   });
 
   D.chatList.addEventListener('pointermove', function (e) {
-    if (!gesture) return;
+    if (!gesture || e.pointerId !== gesture.pointerId) return;
     var dx = e.clientX - gesture.startX;
     var dy = e.clientY - gesture.startY;
     if (!gesture.moved && (Math.abs(dx) > MOVE_THRESHOLD || Math.abs(dy) > MOVE_THRESHOLD)) {
@@ -568,6 +572,11 @@ function initChatListGestures() {
     }
     if (gesture.swiping) {
       e.preventDefault();
+      var now = Date.now();
+      var dt = now - gesture.lastT;
+      if (dt > 0) gesture.velocity = (e.clientX - gesture.lastX) / dt; // px/ms
+      gesture.lastX = e.clientX;
+      gesture.lastT = now;
       var t = clamp(gesture.baseOffset + dx, SWIPE_OPEN, 0);
       gesture.swipeEl.classList.add('is-dragging');
       gesture.swipeEl.classList.remove('is-settling');
@@ -576,7 +585,7 @@ function initChatListGestures() {
   }, { passive: false });
 
   function finish(e) {
-    if (!gesture) return;
+    if (!gesture || e.pointerId !== gesture.pointerId) return;
     clearTimeout(gesture.timer);
     var g = gesture;
     gesture = null;
@@ -585,9 +594,11 @@ function initChatListGestures() {
     if (g.longFired) return; // preview already opened by timer
 
     if (g.swiping) {
-      var dx = (e.clientX || g.startX) - g.startX;
+      var dx = (typeof e.clientX === 'number' ? e.clientX : g.startX) - g.startX;
       var finalOffset = clamp(g.baseOffset + dx, SWIPE_OPEN, 0);
-      if (finalOffset < SWIPE_OPEN * 0.45) openSwipeFor(g.id);
+      var isFastFlick = Math.abs(g.velocity) > 0.5;
+      var shouldOpen = isFastFlick ? g.velocity < 0 : finalOffset < SWIPE_OPEN * 0.45;
+      if (shouldOpen) openSwipeFor(g.id);
       else closeSwipe(g.id);
       return;
     }
@@ -599,6 +610,10 @@ function initChatListGestures() {
   }
   D.chatList.addEventListener('pointerup', finish);
   D.chatList.addEventListener('pointercancel', finish);
+
+  D.chatList.addEventListener('scroll', function () {
+    if (openSwipeId !== null) closeSwipe(openSwipeId);
+  }, { passive: true });
 
   D.chatList.addEventListener('click', function (e) {
     var actionBtn = e.target.closest('[data-action]');
@@ -615,6 +630,7 @@ function initChatListGestures() {
     } else if (action === 'delete') {
       var swipeEl = D.chatList.querySelector('.chat-card-swipe[data-id="' + id + '"]');
       var card = swipeEl ? swipeEl.closest('.chat-card') : null;
+      if (openSwipeId === id) openSwipeId = null;
       if (card) {
         card.style.transition = 'max-height .32s ease, opacity .32s ease';
         card.style.maxHeight = card.offsetHeight + 'px';
@@ -964,6 +980,14 @@ const DETAIL_SCREENS = {
   }
 };
 
+function syncSettingsRowValues() {
+  var map = { appearance: selectedAppearance, grouping: selectedGrouping, language: selectedLanguage };
+  Object.keys(map).forEach(function (key) {
+    var valueEl = qs('.settings-row[data-detail="' + key + '"] .settings-row-value');
+    if (valueEl) valueEl.textContent = map[key];
+  });
+}
+
 function openDetailScreen(key) {
   var def = DETAIL_SCREENS[key];
   if (!def) return;
@@ -984,6 +1008,7 @@ function openDetailScreen(key) {
       if (key === 'language') selectedLanguage = val;
       if (key === 'grouping') selectedGrouping = val;
       if (key === 'appearance') selectedAppearance = val;
+      syncSettingsRowValues();
     });
   });
   var clearBtn = qs('#clearCacheBtn', D.genericDetailContent);
@@ -1001,11 +1026,12 @@ function renderNewChatContacts(query) {
     list = list.filter(function (c) { return c.name.toLowerCase().indexOf(q) !== -1 || c.tag.toLowerCase().indexOf(q) !== -1; });
   }
   D.newChatContactList.innerHTML = list.map(function (c) {
-    return '<button class="contact-row pressable" data-id="' + c.id + '">' +
+    return '<button class="contact-row" data-id="' + c.id + '">' +
       '<span class="avatar" style="width:42px;height:42px;font-size:15px;--c1:' + c.palette[0] + ';--c2:' + c.palette[1] + '"><span>' + c.initials + '</span></span>' +
       '<span class="contact-row-text"><span class="contact-row-name">' + escapeHtml(c.name) + '</span><span class="contact-row-sub">' + escapeHtml(c.tag) + '</span></span>' +
       '</button>';
   }).join('');
+  qsa('.contact-row', D.newChatContactList).forEach(function (el) { addPressFeedback(el); });
 }
 function openNewChatSheet() {
   renderNewChatContacts('');
@@ -1092,8 +1118,9 @@ function simulateCameraCapture() {
   swapSendIcon('mic');
 }
 function onSendPointerDown(e) {
-  if (inputMode === 'typing') return;
-  sendPress = { startX: e.clientX, longFired: false };
+  if (inputMode === 'typing' || sendPress) return;
+  try { D.sendBtn.setPointerCapture(e.pointerId); } catch (err) {}
+  sendPress = { startX: e.clientX, longFired: false, pointerId: e.pointerId };
   sendPress.timer = setTimeout(function () {
     if (!sendPress) return;
     sendPress.longFired = true;
@@ -1101,14 +1128,15 @@ function onSendPointerDown(e) {
   }, 260);
 }
 function onSendPointerMove(e) {
-  if (!sendPress || !recording) return;
+  if (!sendPress || e.pointerId !== sendPress.pointerId || !recording) return;
   var dx = e.clientX - sendPress.startX;
   var cancelling = dx < -70;
   D.recordingUI.classList.toggle('is-cancelling', cancelling);
   recording.cancelling = cancelling;
 }
-function finishSendPress() {
+function finishSendPress(e) {
   if (!sendPress) return;
+  if (e && e.pointerId !== undefined && e.pointerId !== sendPress.pointerId) return;
   clearTimeout(sendPress.timer);
   var wasLong = sendPress.longFired;
   sendPress = null;
@@ -1309,8 +1337,12 @@ function init() {
   D.sendBtn.addEventListener('pointerdown', onSendPointerDown);
   D.sendBtn.addEventListener('pointermove', onSendPointerMove);
   D.sendBtn.addEventListener('pointerup', finishSendPress);
-  D.sendBtn.addEventListener('pointerleave', function () { if (recording) finishSendPress(); });
-  D.sendBtn.addEventListener('pointercancel', function () { if (recording) stopRecording(true); sendPress = null; });
+  D.sendBtn.addEventListener('pointercancel', function (e) {
+    if (!sendPress || (e.pointerId !== undefined && e.pointerId !== sendPress.pointerId)) return;
+    clearTimeout(sendPress.timer);
+    sendPress = null;
+    if (recording) stopRecording(true);
+  });
   D.sendBtn.addEventListener('click', function () { if (inputMode === 'typing') sendTextMessage(); });
   D.chatMessages.addEventListener('click', function (e) {
     var voiceBtn = e.target.closest('.voice-play');
@@ -1363,6 +1395,9 @@ function init() {
   document.addEventListener('click', function (e) {
     var back = e.target.closest('[data-action="pop"]');
     if (back) popScreen();
+    if (openSwipeId !== null && !e.target.closest('.chat-card[data-id="' + openSwipeId + '"]')) {
+      closeSwipe(openSwipeId);
+    }
   });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
