@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#000000">
 <meta name="color-scheme" content="dark">
 <title>Сообщения</title>
-<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -33,15 +33,26 @@
       </header>
 
       <div class="search-wrap" id="searchWrap">
+        <button class="search-cancel" id="searchCancelBtn">Отмена</button>
         <div class="search-bar glass" id="chatSearchBar">
           <i class="icon search-icon" data-icon="search"></i>
           <input type="text" id="chatSearchInput" class="search-input" placeholder="Поиск" enterkeyhint="search" autocomplete="off" autocorrect="off" spellcheck="false">
           <button class="search-clear" id="searchClearBtn" aria-label="Очистить" hidden><i class="icon" data-icon="xmarkCircle"></i></button>
         </div>
-        <button class="search-cancel" id="searchCancelBtn">Отмена</button>
       </div>
 
-      <div class="chat-list" id="chatList"></div>
+      <div class="chat-list-scroll" id="chatListScroll">
+        <div class="archive-reveal" id="archiveReveal">
+          <span class="archive-reveal-icon"><i class="icon" data-icon="archive"></i></span>
+          <span class="archive-reveal-label">Архив</span>
+          <span class="archive-reveal-count" id="archiveRevealCount"></span>
+        </div>
+        <div class="chat-list" id="chatList"></div>
+        <div class="recent-search-panel" id="recentSearchPanel" hidden>
+          <div class="section-label">Недавние</div>
+          <div class="recent-search-list" id="recentSearchList"></div>
+        </div>
+      </div>
       <div class="empty-state" id="chatListEmpty" hidden>
         <i class="icon empty-state-icon" data-icon="search"></i>
         <p>Ничего не найдено</p>
@@ -56,6 +67,20 @@
       <div class="detail-empty-icon"><i class="icon" data-icon="bubble"></i></div>
       <p>Выберите чат, чтобы начать общение</p>
     </div>
+
+    <!-- ---- Archive ---- -->
+    <section class="screen" id="screen-archive" data-screen="archive">
+      <header class="navbar navbar--plain">
+        <button class="nav-btn nav-side nav-side--left" data-action="pop"><i class="icon" data-icon="chevronLeft"></i><span>Назад</span></button>
+        <h1 class="navbar-title">Архив</h1>
+        <span class="nav-side nav-side--right"></span>
+      </header>
+      <div class="chat-list" id="archiveChatList"></div>
+      <div class="empty-state" id="archiveEmpty" hidden>
+        <i class="icon empty-state-icon" data-icon="archive"></i>
+        <p>Архив пуст</p>
+      </div>
+    </section>
 
     <!-- ---- Settings ---- -->
     <section class="screen" id="screen-settings" data-screen="settings">
@@ -130,7 +155,7 @@
             <i class="icon chevron-icon" data-icon="chevronRight"></i>
           </button>
         </div>
-        <p class="scroll-footer">Мессенджер · версия 26.0</p>
+        <p class="scroll-footer" id="settingsVersionFooter">Мессенджер · версия 26.0</p>
       </div>
     </section>
 
@@ -165,13 +190,17 @@
             <span class="track-artist" id="selfTrackArtist"></span>
           </span>
           <button class="track-play" id="selfTrackPlay"><i class="icon" data-icon="play"></i></button>
+          <i class="icon chevron-icon" data-icon="chevronRight"></i>
         </div>
 
         <div class="glass-card info-card">
           <div class="info-row"><span class="info-label">Телефон</span><span class="info-value" id="sPhone"></span></div>
           <div class="info-row"><span class="info-label">Тег</span><span class="info-value" id="sTag"></span></div>
           <div class="info-row"><span class="info-label">Дата рождения</span><span class="info-value" id="sBirthday"></span></div>
-          <div class="info-row info-row--multiline"><span class="info-label">О себе</span><span class="info-value" id="sBio"></span></div>
+        </div>
+        <div class="glass-card bio-card">
+          <span class="bio-card-label">О себе</span>
+          <span class="bio-card-text" id="sBio"></span>
         </div>
 
         <button class="share-btn" id="shareProfileBtn"><i class="icon" data-icon="share"></i><span>Поделиться</span></button>
@@ -214,7 +243,36 @@
         </button>
       </header>
 
+      <div class="chat-search-bar" id="chatSearchBarInChat" hidden>
+        <div class="search-bar glass" id="chatSearchBarInChatPill">
+          <i class="icon search-icon" data-icon="search"></i>
+          <input type="text" id="chatSearchInChatInput" class="search-input" placeholder="Поиск в чате" autocomplete="off">
+        </div>
+        <span class="chat-search-count" id="chatSearchCount"></span>
+        <button class="glass-circle-btn chat-search-nav-btn" id="chatSearchPrevBtn" aria-label="Предыдущее"><i class="icon" data-icon="chevronLeft"></i></button>
+        <button class="glass-circle-btn chat-search-nav-btn" id="chatSearchNextBtn" aria-label="Следующее"><i class="icon" data-icon="chevronRight"></i></button>
+        <button class="text-btn" id="chatSearchInChatCloseBtn">Отмена</button>
+      </div>
+
+      <button class="pinned-msg-banner" id="pinnedMsgBanner" hidden>
+        <i class="icon" data-icon="pin"></i>
+        <span class="pinned-msg-banner-text">
+          <span class="pinned-msg-banner-label">Закреплённое сообщение</span>
+          <span class="pinned-msg-banner-snippet" id="pinnedMsgBannerSnippet"></span>
+        </span>
+        <button class="pinned-msg-banner-close" id="pinnedMsgBannerCloseBtn"><i class="icon" data-icon="xmarkCircle"></i></button>
+      </button>
+
       <div class="chat-messages" id="chatMessages"></div>
+
+      <div class="reply-preview-bar" id="replyPreviewBar" hidden>
+        <span class="reply-preview-bar-accent"></span>
+        <span class="reply-preview-bar-text">
+          <span class="reply-preview-bar-name" id="replyPreviewName"></span>
+          <span class="reply-preview-bar-snippet" id="replyPreviewSnippet"></span>
+        </span>
+        <button class="reply-preview-bar-close" id="replyPreviewCloseBtn"><i class="icon" data-icon="xmarkCircle"></i></button>
+      </div>
 
       <div class="input-bar">
         <button class="glass-circle-btn input-attach" id="attachBtn" aria-label="Прикрепить"><i class="icon" data-icon="paperclip"></i></button>
@@ -237,7 +295,7 @@
       <header class="navbar navbar--plain">
         <button class="nav-btn nav-side nav-side--left" data-action="pop"><i class="icon" data-icon="chevronLeft"></i><span>Назад</span></button>
         <h1 class="navbar-title">Профиль</h1>
-        <span class="nav-side nav-side--right"></span>
+        <button class="text-btn nav-side nav-side--right" id="shareContactBtn">Поделиться</button>
       </header>
       <div class="scroll-area">
         <div class="profile-header">
@@ -274,7 +332,10 @@
           <div class="info-row"><span class="info-label">Телефон</span><span class="info-value" id="cPhone"></span></div>
           <div class="info-row"><span class="info-label">Тег</span><span class="info-value" id="cTag"></span></div>
           <div class="info-row"><span class="info-label">Дата рождения</span><span class="info-value" id="cBirthday"></span></div>
-          <div class="info-row info-row--multiline"><span class="info-label">О себе</span><span class="info-value" id="cBio"></span></div>
+        </div>
+        <div class="glass-card bio-card">
+          <span class="bio-card-label">О себе</span>
+          <span class="bio-card-text" id="cBio"></span>
         </div>
 
         <div class="media-section">
@@ -335,7 +396,7 @@
       <div class="preview-messages" id="previewMessages"></div>
     </div>
     <div class="preview-actions glass" id="previewActions">
-      <button class="preview-action-btn" id="previewArchiveBtn"><i class="icon" data-icon="archive"></i><span>Архивировать</span></button>
+      <button class="preview-action-btn" id="previewArchiveBtn"><i class="icon" data-icon="archive"></i><span id="previewArchiveLabel">Архивировать</span></button>
       <span class="preview-actions-divider"></span>
       <button class="preview-action-btn" id="previewPinBtn"><i class="icon" data-icon="pin"></i><span id="previewPinLabel">Закрепить</span></button>
     </div>
@@ -348,8 +409,64 @@
   <div class="avatar-preview-square" id="avatarPreviewSquare"></div>
 </div>
 
+<!-- ======================= MESSAGE ACTION MENU ======================= -->
+<div class="modal-overlay" id="messageMenuOverlay">
+  <div class="message-menu-wrap" id="messageMenuWrap">
+    <div class="quick-reactions" id="quickReactions"></div>
+    <div class="message-menu-bubble" id="messageMenuBubble"></div>
+    <div class="message-menu-actions glass-card" id="messageMenuActions"></div>
+    <button class="confirm-cancel" id="messageMenuCancelBtn">Отмена</button>
+  </div>
+</div>
+
+<!-- ======================= FORWARD SHEET ======================= -->
+<div class="sheet-overlay" id="forwardOverlay">
+  <div class="sheet glass" id="forwardSheet">
+    <div class="sheet-grabber"></div>
+    <header class="sheet-header">
+      <button class="text-btn nav-side nav-side--left" id="forwardCancelBtn">Отмена</button>
+      <h2 class="sheet-title">Переслать</h2>
+      <span class="nav-side nav-side--right"></span>
+    </header>
+    <div class="scroll-area sheet-scroll">
+      <p class="section-label">Контакты</p>
+      <div class="contact-list glass-card" id="forwardContactList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= TRACK PICKER SHEET ======================= -->
+<div class="sheet-overlay" id="trackPickerOverlay">
+  <div class="sheet glass" id="trackPickerSheet">
+    <div class="sheet-grabber"></div>
+    <header class="sheet-header">
+      <button class="text-btn nav-side nav-side--left" id="trackPickerCancelBtn">Отмена</button>
+      <h2 class="sheet-title">Закреплённый трек</h2>
+      <span class="nav-side nav-side--right"></span>
+    </header>
+    <div class="scroll-area sheet-scroll">
+      <div class="contact-list glass-card" id="trackPickerList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= CONFIRM ACTION SHEET ======================= -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="confirm-wrap">
+    <div class="confirm-card glass" id="confirmCard">
+      <div class="confirm-text">
+        <h3 id="confirmTitle"></h3>
+        <p id="confirmMessage"></p>
+      </div>
+      <div class="confirm-actions" id="confirmActions"></div>
+    </div>
+    <button class="confirm-cancel" id="confirmCancelBtn">Отмена</button>
+  </div>
+</div>
+
+<div class="reply-swipe-icon" id="replySwipeIcon"><i class="icon" data-icon="reply"></i></div>
 <div class="toast" id="toast"></div>
 
-<script src="./script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
